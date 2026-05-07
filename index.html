@@ -319,6 +319,43 @@
     color: #7A5400;
     margin-bottom: 12px;
   }
+
+  .tip-box {
+    display: none;
+    background: #FFF8E7;
+    border: 1px solid #F5C842;
+    border-radius: 14px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 12px;
+  }
+
+  .tip-box-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: #9A6F00;
+    margin-bottom: 6px;
+  }
+
+  .tip-box-text {
+    font-size: 14px;
+    color: #5A3E00;
+    line-height: 1.5;
+  }
+
+  .tip-box-amount {
+    font-size: 22px;
+    font-weight: 600;
+    font-family: 'DM Mono', monospace;
+    color: #7A5000;
+    margin: 6px 0 4px;
+  }
+
+  .tip-box-sub {
+    font-size: 12px;
+    color: #9A7020;
+  }
 </style>
 </head>
 <body>
@@ -420,6 +457,13 @@
       </div>
     </div>
 
+    <div class="tip-box" id="tip-box">
+      <p class="tip-box-label">💡 When to come back</p>
+      <p class="tip-box-text">Our machine becomes the better deal for this merchant once their monthly card transactions cross</p>
+      <p class="tip-box-amount" id="tip-amount"></p>
+      <p class="tip-box-sub">Save this merchant's number and follow up when their business grows.</p>
+    </div>
+
     <button class="reset-btn" onclick="reset()">← Calculate again</button>
   </div>
 
@@ -480,6 +524,21 @@ function calculate() {
   fiveyearEl.textContent = fmtINR(netFiveYear);
   monthlyEl.textContent  = fmtINR(netMonth);
 
+  // Breakeven tip — only show when result is red
+  var tipBox    = document.getElementById('tip-box');
+  var tipAmount = document.getElementById('tip-amount');
+  var mdrDiff   = (curMdr - ourMdr) / 100;
+
+  if (netMonth < 0 && mdrDiff > 0) {
+    // breakeven volume = net rental cost / mdr difference
+    var rentalCost     = ourRental - curRental; // how much extra rental merchant pays
+    var breakevenVol   = rentalCost / mdrDiff;
+    tipAmount.textContent = fmtINR(breakevenVol) + ' per month';
+    tipBox.style.display  = 'block';
+  } else {
+    tipBox.style.display = 'none';
+  }
+
   document.getElementById('results').style.display = 'block';
   document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -490,6 +549,7 @@ function reset() {
   });
   document.getElementById('results').style.display = 'none';
   document.getElementById('error-msg').style.display = 'none';
+  document.getElementById('tip-box').style.display = 'none';
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 </script>
