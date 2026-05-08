@@ -121,11 +121,12 @@
     pointer-events: none;
   }
 
-  input[type="number"] {
+  input[type="number"],
+  input[type="text"] {
     width: 100%;
     padding: 10px 36px 10px 28px;
     font-size: 15px;
-    font-family: 'DM Mono', monospace;
+    font-family: 'DM Sans', monospace;
     font-weight: 500;
     border: 1px solid var(--border);
     border-radius: 10px;
@@ -136,16 +137,103 @@
     transition: border-color .15s;
   }
 
+  input[type="text"] {
+    font-family: 'DM Sans', sans-serif;
+    padding: 10px 80px 10px 14px;
+  }
+
   input[type="number"]::-webkit-inner-spin-button,
   input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 
-  input[type="number"]:focus {
+  input[type="number"]:focus,
+  input[type="text"]:focus {
     outline: none;
     border-color: var(--ink);
     background: #fff;
   }
 
   .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* Agent name card */
+  .agent-card {
+    background: var(--ink);
+    border-radius: 14px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 12px;
+  }
+
+  .agent-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: 8px;
+  }
+
+  .agent-input-wrap { position: relative; }
+
+  .agent-input-wrap input {
+    width: 100%;
+    padding: 10px 80px 10px 14px;
+    font-size: 15px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    border: 1px solid #444;
+    border-radius: 10px;
+    background: #2A2A2A;
+    color: #fff;
+  }
+
+  .agent-input-wrap input::placeholder { color: #666; }
+  .agent-input-wrap input:focus { outline: none; border-color: #777; background: #333; }
+
+  .agent-change-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 11px;
+    font-weight: 600;
+    color: #aaa;
+    background: #3A3A3A;
+    border: none;
+    border-radius: 6px;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .agent-saved-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .agent-saved-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+  }
+
+  .agent-saved-sub {
+    font-size: 11px;
+    color: #888;
+    margin-top: 2px;
+  }
+
+  .agent-edit-btn {
+    font-size: 11px;
+    font-weight: 600;
+    color: #aaa;
+    background: #2A2A2A;
+    border: 1px solid #444;
+    border-radius: 8px;
+    padding: 5px 12px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    white-space: nowrap;
+  }
 
   .calc-btn {
     width: 100%;
@@ -295,31 +383,6 @@
   .total-val.neg { color: var(--red-text); }
   .total-val.neu { color: var(--ink-2); }
 
-  .reset-btn {
-    width: 100%;
-    padding: 12px;
-    font-size: 14px;
-    font-family: 'DM Sans', sans-serif;
-    color: var(--ink-2);
-    background: transparent;
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    cursor: pointer;
-    margin-top: 4px;
-  }
-  .reset-btn:active { background: var(--border); }
-
-  .error-msg {
-    display: none;
-    background: #FFF3CD;
-    border: 1px solid #FFCA28;
-    border-radius: 10px;
-    padding: 10px 14px;
-    font-size: 13px;
-    color: #7A5400;
-    margin-bottom: 12px;
-  }
-
   .tip-box {
     display: none;
     background: #FFF8E7;
@@ -356,6 +419,42 @@
     font-size: 12px;
     color: #9A7020;
   }
+
+  .reset-btn {
+    width: 100%;
+    padding: 12px;
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--ink-2);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+  .reset-btn:active { background: var(--border); }
+
+  .error-msg {
+    display: none;
+    background: #FFF3CD;
+    border: 1px solid #FFCA28;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #7A5400;
+    margin-bottom: 12px;
+  }
+
+  .agent-error {
+    display: none;
+    background: #FDECEA;
+    border: 1px solid #E88080;
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-size: 13px;
+    color: #8C1A1A;
+    margin-top: 8px;
+  }
 </style>
 </head>
 <body>
@@ -367,6 +466,29 @@
 </div>
 
 <div class="body">
+
+  <!-- Agent name card -->
+  <div class="agent-card">
+    <p class="agent-label">Agent name</p>
+    <!-- Input state -->
+    <div id="agent-input-state">
+      <div class="agent-input-wrap">
+        <input type="text" id="agent-name-input" placeholder="Enter your name" maxlength="50">
+        <button class="agent-change-btn" onclick="saveAgentName()">Save</button>
+      </div>
+      <div class="agent-error" id="agent-error">Please enter your name before calculating.</div>
+    </div>
+    <!-- Saved state -->
+    <div id="agent-saved-state" style="display:none">
+      <div class="agent-saved-row">
+        <div>
+          <p class="agent-saved-name" id="agent-saved-name"></p>
+          <p class="agent-saved-sub">Tap change to update your name</p>
+        </div>
+        <button class="agent-edit-btn" onclick="editAgentName()">Change</button>
+      </div>
+    </div>
+  </div>
 
   <div class="card">
     <p class="sec-label">Merchant's current setup</p>
@@ -423,12 +545,9 @@
 
     <div class="hero-card" id="hero-card">
       <p class="verdict" id="verdict"></p>
-
       <p class="yearly-amount" id="yearly-amount"></p>
       <p class="yearly-period">saved every year</p>
-
       <div class="hero-divider"></div>
-
       <div class="sub-row">
         <div>
           <p class="sub-label">Over 5 years</p>
@@ -470,88 +589,170 @@
 </div>
 
 <script>
-function fmtINR(n) {
-  return '₹' + Math.abs(Math.round(n)).toLocaleString('en-IN');
-}
+  var SHEET_URL = 'https://script.google.com/macros/s/AKfycbyCVUPwjRdGLFQ49QX2lwnhua8NcBzpk9a4mg4shEZLVrOvT-8o-MSmRzSYidNRO9RbAA/exec';
 
-function sign(n) { return n >= 0 ? '+ ' : '− '; }
+  var DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 
-function calculate() {
-  var vol       = parseFloat(document.getElementById('volume').value);
-  var curMdr    = parseFloat(document.getElementById('cur-mdr').value);
-  var curRental = parseFloat(document.getElementById('cur-rental').value);
-  var ourMdr    = parseFloat(document.getElementById('our-mdr').value);
-  var ourRental = parseFloat(document.getElementById('our-rental').value);
+  // --- Agent name logic ---
+  function initAgent() {
+    var saved = localStorage.getItem('edc_agent_name');
+    if (saved) {
+      showSavedState(saved);
+    }
+  }
 
-  var errEl = document.getElementById('error-msg');
+  function saveAgentName() {
+    var val = document.getElementById('agent-name-input').value.trim();
+    if (!val) {
+      document.getElementById('agent-error').style.display = 'block';
+      return;
+    }
+    localStorage.setItem('edc_agent_name', val);
+    document.getElementById('agent-error').style.display = 'none';
+    showSavedState(val);
+  }
 
-  if (isNaN(vol) || isNaN(curMdr) || isNaN(curRental) || isNaN(ourMdr) || isNaN(ourRental)) {
-    errEl.style.display = 'block';
+  function showSavedState(name) {
+    document.getElementById('agent-input-state').style.display = 'none';
+    document.getElementById('agent-saved-state').style.display = 'block';
+    document.getElementById('agent-saved-name').textContent = name;
+  }
+
+  function editAgentName() {
+    var current = localStorage.getItem('edc_agent_name') || '';
+    document.getElementById('agent-name-input').value = current;
+    document.getElementById('agent-input-state').style.display = 'block';
+    document.getElementById('agent-saved-state').style.display = 'none';
+  }
+
+  // --- Formatting ---
+  function fmtINR(n) {
+    return '₹' + Math.abs(Math.round(n)).toLocaleString('en-IN');
+  }
+
+  function sign(n) { return n >= 0 ? '+ ' : '− '; }
+
+  // --- Main calculate ---
+  function calculate() {
+    var agentName = localStorage.getItem('edc_agent_name') || '';
+    if (!agentName) {
+      document.getElementById('agent-error').style.display = 'block';
+      document.getElementById('agent-name-input').focus();
+      return;
+    }
+
+    var vol       = parseFloat(document.getElementById('volume').value);
+    var curMdr    = parseFloat(document.getElementById('cur-mdr').value);
+    var curRental = parseFloat(document.getElementById('cur-rental').value);
+    var ourMdr    = parseFloat(document.getElementById('our-mdr').value);
+    var ourRental = parseFloat(document.getElementById('our-rental').value);
+
+    var errEl = document.getElementById('error-msg');
+
+    if (isNaN(vol) || isNaN(curMdr) || isNaN(curRental) || isNaN(ourMdr) || isNaN(ourRental)) {
+      errEl.style.display = 'block';
+      document.getElementById('results').style.display = 'none';
+      return;
+    }
+
+    errEl.style.display = 'none';
+
+    var mdrSaving    = (curMdr - ourMdr) / 100 * vol;
+    var rentalSaving = curRental - ourRental;
+    var netMonth     = mdrSaving + rentalSaving;
+    var netYear      = netMonth * 12;
+    var netFiveYear  = netMonth * 60;
+    var mdrDiff      = curMdr - ourMdr;
+    var rentalDiff   = curRental - ourRental;
+    var curTotalCost = (curMdr / 100 * vol) + curRental;
+    var ourTotalCost = (ourMdr / 100 * vol) + ourRental;
+    var result       = netMonth > 0 ? 'Green - Merchant Saves' : netMonth < 0 ? 'Red - Merchant Pays More' : 'No Difference';
+
+    var breakevenVol = 0;
+    var mdrDiffPct   = (curMdr - ourMdr) / 100;
+    if (netMonth < 0 && mdrDiffPct > 0) {
+      breakevenVol = (ourRental - curRental) / mdrDiffPct;
+    }
+
+    // Update UI
+    var mdrEl = document.getElementById('mdr-val');
+    mdrEl.textContent = sign(mdrSaving) + fmtINR(mdrSaving);
+    mdrEl.className = 'breakup-val ' + (mdrSaving > 0 ? 'pos' : mdrSaving < 0 ? 'neg' : 'neu');
+
+    var rentalEl = document.getElementById('rental-val');
+    rentalEl.textContent = sign(rentalSaving) + fmtINR(rentalSaving);
+    rentalEl.className = 'breakup-val ' + (rentalSaving > 0 ? 'pos' : rentalSaving < 0 ? 'neg' : 'neu');
+
+    var netTotalEl = document.getElementById('net-month-total');
+    netTotalEl.textContent = sign(netMonth) + fmtINR(netMonth);
+    netTotalEl.className = 'total-val ' + (netMonth > 0 ? 'pos' : netMonth < 0 ? 'neg' : 'neu');
+
+    var heroCard   = document.getElementById('hero-card');
+    heroCard.className = 'hero-card ' + (netMonth > 0 ? 'saving' : netMonth < 0 ? 'losing' : 'zero');
+
+    document.getElementById('verdict').textContent  = netMonth > 0 ? 'Merchant saves' : netMonth < 0 ? 'Merchant pays more' : 'No difference';
+    document.getElementById('yearly-amount').textContent   = fmtINR(netYear);
+    document.getElementById('fiveyear-amount').textContent = fmtINR(netFiveYear);
+    document.getElementById('monthly-amount').textContent  = fmtINR(netMonth);
+
+    var tipBox = document.getElementById('tip-box');
+    if (netMonth < 0 && mdrDiffPct > 0) {
+      document.getElementById('tip-amount').textContent = fmtINR(breakevenVol) + ' per month';
+      tipBox.style.display = 'block';
+    } else {
+      tipBox.style.display = 'none';
+    }
+
+    document.getElementById('results').style.display = 'block';
+    document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    // Send to Google Sheet
+    var now = new Date();
+    var payload = {
+      date:         now.toLocaleDateString('en-IN'),
+      time:         now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+      dayOfWeek:    DAYS[now.getDay()],
+      agentName:    agentName,
+      volume:       vol,
+      curMdr:       curMdr,
+      curRental:    curRental,
+      curTotalCost: Math.round(curTotalCost),
+      ourMdr:       ourMdr,
+      ourRental:    ourRental,
+      ourTotalCost: Math.round(ourTotalCost),
+      mdrDiff:      Math.round(mdrDiff * 100) / 100,
+      rentalDiff:   Math.round(rentalDiff),
+      mdrSaving:    Math.round(mdrSaving),
+      rentalSaving: Math.round(rentalSaving),
+      netMonth:     Math.round(netMonth),
+      netYear:      Math.round(netYear),
+      netFiveYear:  Math.round(netFiveYear),
+      result:       result,
+      breakevenVol: Math.round(breakevenVol)
+    };
+
+    fetch(SHEET_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).catch(function() {
+      // Silent fail — don't disturb agent
+    });
+  }
+
+  function reset() {
+    ['volume','cur-mdr','cur-rental','our-mdr','our-rental'].forEach(function(id) {
+      document.getElementById(id).value = '';
+    });
     document.getElementById('results').style.display = 'none';
-    return;
+    document.getElementById('error-msg').style.display = 'none';
+    document.getElementById('tip-box').style.display = 'none';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  errEl.style.display = 'none';
-
-  var mdrSaving    = (curMdr - ourMdr) / 100 * vol;
-  var rentalSaving = curRental - ourRental;
-  var netMonth     = mdrSaving + rentalSaving;
-  var netYear      = netMonth * 12;
-  var netFiveYear  = netMonth * 60;
-
-  var mdrEl = document.getElementById('mdr-val');
-  mdrEl.textContent = sign(mdrSaving) + fmtINR(mdrSaving);
-  mdrEl.className = 'breakup-val ' + (mdrSaving > 0 ? 'pos' : mdrSaving < 0 ? 'neg' : 'neu');
-
-  var rentalEl = document.getElementById('rental-val');
-  rentalEl.textContent = sign(rentalSaving) + fmtINR(rentalSaving);
-  rentalEl.className = 'breakup-val ' + (rentalSaving > 0 ? 'pos' : rentalSaving < 0 ? 'neg' : 'neu');
-
-  var netTotalEl = document.getElementById('net-month-total');
-  netTotalEl.textContent = sign(netMonth) + fmtINR(netMonth);
-  netTotalEl.className = 'total-val ' + (netMonth > 0 ? 'pos' : netMonth < 0 ? 'neg' : 'neu');
-
-  var heroCard   = document.getElementById('hero-card');
-  var verdictEl  = document.getElementById('verdict');
-  var yearlyEl   = document.getElementById('yearly-amount');
-  var fiveyearEl = document.getElementById('fiveyear-amount');
-  var monthlyEl  = document.getElementById('monthly-amount');
-
-  heroCard.className = 'hero-card ' + (netMonth > 0 ? 'saving' : netMonth < 0 ? 'losing' : 'zero');
-
-  verdictEl.textContent  = netMonth > 0 ? 'Merchant saves' : netMonth < 0 ? 'Merchant pays more' : 'No difference';
-  yearlyEl.textContent   = fmtINR(netYear);
-  fiveyearEl.textContent = fmtINR(netFiveYear);
-  monthlyEl.textContent  = fmtINR(netMonth);
-
-  // Breakeven tip — only show when result is red
-  var tipBox    = document.getElementById('tip-box');
-  var tipAmount = document.getElementById('tip-amount');
-  var mdrDiff   = (curMdr - ourMdr) / 100;
-
-  if (netMonth < 0 && mdrDiff > 0) {
-    // breakeven volume = net rental cost / mdr difference
-    var rentalCost     = ourRental - curRental; // how much extra rental merchant pays
-    var breakevenVol   = rentalCost / mdrDiff;
-    tipAmount.textContent = fmtINR(breakevenVol) + ' per month';
-    tipBox.style.display  = 'block';
-  } else {
-    tipBox.style.display = 'none';
-  }
-
-  document.getElementById('results').style.display = 'block';
-  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-function reset() {
-  ['volume','cur-mdr','cur-rental','our-mdr','our-rental'].forEach(function(id) {
-    document.getElementById(id).value = '';
-  });
-  document.getElementById('results').style.display = 'none';
-  document.getElementById('error-msg').style.display = 'none';
-  document.getElementById('tip-box').style.display = 'none';
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
+  // Init on load
+  initAgent();
 </script>
 </body>
 </html>
