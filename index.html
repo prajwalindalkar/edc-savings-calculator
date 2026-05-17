@@ -5,8 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>EDC Savings Calculator</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -27,14 +25,14 @@
   .field:last-child { margin-bottom: 0; }
   .field label { display: block; font-size: 12px; color: var(--ink-2); margin-bottom: 5px; font-weight: 500; }
   .input-wrap { position: relative; }
-  .input-prefix { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); font-size: 14px; color: var(--ink-3); pointer-events: none; font-family: 'DM Mono', monospace; }
+  .input-prefix { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); font-size: 14px; color: var(--ink-3); pointer-events: none; }
   .input-suffix { position: absolute; right: 11px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--ink-3); pointer-events: none; }
   input[type="number"], input[type="text"], input[type="tel"] {
     width: 100%; padding: 10px 36px 10px 28px; font-size: 15px; font-family: 'DM Mono', monospace; font-weight: 500;
     border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--ink);
     appearance: none; -moz-appearance: textfield; transition: border-color .15s;
   }
-  input[type="text"], input[type="tel"] { font-family: 'DM Sans', sans-serif; padding: 10px 90px 10px 14px; }
+  input[type="text"], input[type="tel"] { font-family: 'DM Sans', sans-serif; padding: 10px 14px; }
   input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
   input:focus { outline: none; border-color: var(--ink); background: #fff; }
   .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -46,34 +44,19 @@
   .agent-field:last-child { margin-bottom: 0; }
   .agent-field label { display: block; font-size: 11px; color: #888; margin-bottom: 4px; font-weight: 500; }
   .agent-input-wrap { position: relative; }
-  .agent-input-wrap input {
-    width: 100%; padding: 9px 80px 9px 14px; font-size: 15px; font-family: 'DM Sans', sans-serif; font-weight: 500;
-    border: 1px solid #444; border-radius: 10px; background: #2A2A2A; color: #fff;
-  }
+  .agent-input-wrap input { width: 100%; padding: 9px 80px 9px 14px; font-size: 15px; font-family: 'DM Sans', sans-serif; font-weight: 500; border: 1px solid #444; border-radius: 10px; background: #2A2A2A; color: #fff; }
   .agent-input-wrap input::placeholder { color: #666; }
   .agent-input-wrap input:focus { outline: none; border-color: #777; background: #333; }
-  .agent-save-btn {
-    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
-    font-size: 11px; font-weight: 600; color: #aaa; background: #3A3A3A;
-    border: none; border-radius: 6px; padding: 4px 10px; cursor: pointer; font-family: 'DM Sans', sans-serif;
-  }
-  .agent-saved-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-  .agent-saved-row:last-child { margin-bottom: 0; }
-  .agent-saved-info .agent-saved-name { font-size: 15px; font-weight: 600; color: #fff; }
-  .agent-saved-info .agent-saved-sub { font-size: 11px; color: #888; margin-top: 1px; }
-  .agent-edit-btn {
-    font-size: 11px; font-weight: 600; color: #aaa; background: #2A2A2A;
-    border: 1px solid #444; border-radius: 8px; padding: 5px 12px; cursor: pointer; font-family: 'DM Sans', sans-serif; white-space: nowrap;
-  }
+  .agent-save-btn { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 11px; font-weight: 600; color: #aaa; background: #3A3A3A; border: none; border-radius: 6px; padding: 4px 10px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+  .agent-saved-row { display: flex; align-items: center; justify-content: space-between; }
+  .agent-saved-name { font-size: 15px; font-weight: 600; color: #fff; }
+  .agent-saved-sub { font-size: 11px; color: #888; margin-top: 2px; }
+  .agent-edit-btn { font-size: 11px; font-weight: 600; color: #aaa; background: #2A2A2A; border: 1px solid #444; border-radius: 8px; padding: 5px 12px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
 
-  .calc-btn {
-    width: 100%; padding: 15px; font-size: 15px; font-weight: 600; font-family: 'DM Sans', sans-serif;
-    background: var(--ink); color: #fff; border: none; border-radius: 14px; cursor: pointer; margin-bottom: 14px; transition: opacity .15s, transform .1s;
-  }
+  .calc-btn { width: 100%; padding: 15px; font-size: 15px; font-weight: 600; font-family: 'DM Sans', sans-serif; background: var(--ink); color: #fff; border: none; border-radius: 14px; cursor: pointer; margin-bottom: 14px; transition: opacity .15s, transform .1s; }
   .calc-btn:active { opacity: .85; transform: scale(.98); }
   .results { display: none; }
 
-  /* Hero card */
   .hero-card { border-radius: 14px; padding: 1.5rem 1.25rem 1.25rem; margin-bottom: 12px; border: 1px solid; }
   .hero-card.saving { background: var(--green-bg); border-color: var(--green-border); }
   .hero-card.losing { background: var(--red-bg); border-color: var(--red-border); }
@@ -95,7 +78,6 @@
   .monthly-amount { font-size: 15px; font-weight: 500; font-family: 'DM Mono', monospace; line-height: 1; }
   .saving .monthly-amount { color: var(--green-sub); } .losing .monthly-amount { color: var(--red-sub); } .zero .monthly-amount { color: var(--ink-2); }
 
-  /* Breakup */
   .breakup-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--border); }
   .breakup-row:last-child { border-bottom: none; }
   .breakup-label { font-size: 13px; color: var(--ink-2); }
@@ -106,26 +88,21 @@
   .total-val { font-size: 16px; font-weight: 600; font-family: 'DM Mono', monospace; }
   .total-val.pos { color: var(--green-text); } .total-val.neg { color: var(--red-text); } .total-val.neu { color: var(--ink-2); }
 
-  /* Tip box */
   .tip-box { display: none; background: #FFF8E7; border: 1px solid #F5C842; border-radius: 14px; padding: 1rem 1.25rem; margin-bottom: 12px; }
   .tip-box-label { font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: #9A6F00; margin-bottom: 6px; }
   .tip-box-text { font-size: 14px; color: #5A3E00; line-height: 1.5; }
   .tip-box-amount { font-size: 22px; font-weight: 600; font-family: 'DM Mono', monospace; color: #7A5000; margin: 6px 0 4px; }
   .tip-box-sub { font-size: 12px; color: #9A7020; }
 
-  /* Merchant phone + PDF section */
-  .pdf-section { display: none; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 1.1rem 1.25rem; margin-bottom: 12px; }
-  .pdf-section .sec-label { margin-bottom: 14px; }
-  .pdf-btn {
-    width: 100%; padding: 14px; font-size: 15px; font-weight: 600; font-family: 'DM Sans', sans-serif;
-    background: var(--green-text); color: #fff; border: none; border-radius: 14px; cursor: pointer; margin-top: 12px; transition: opacity .15s;
-  }
-  .pdf-btn:active { opacity: .85; }
+  /* Copy message section */
+  .copy-section { display: none; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 1.1rem 1.25rem; margin-bottom: 12px; }
+  .msg-preview { background: #ECF8E8; border: 1px solid #B8DFA8; border-radius: 10px; padding: 12px 14px; font-size: 13px; line-height: 1.7; color: #1A1A1A; white-space: pre-wrap; word-break: break-word; margin-bottom: 12px; font-family: 'DM Sans', sans-serif; }
+  .copy-btn { width: 100%; padding: 14px; font-size: 15px; font-weight: 600; font-family: 'DM Sans', sans-serif; background: #25D366; color: #fff; border: none; border-radius: 14px; cursor: pointer; transition: opacity .15s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .copy-btn:active { opacity: .85; }
+  .copy-btn.copied { background: #2A6A10; }
+  .copy-hint { font-size: 11px; color: var(--ink-3); text-align: center; margin-top: 8px; }
 
-  .reset-btn {
-    width: 100%; padding: 12px; font-size: 14px; font-family: 'DM Sans', sans-serif;
-    color: var(--ink-2); background: transparent; border: 1px solid var(--border); border-radius: 14px; cursor: pointer; margin-top: 4px;
-  }
+  .reset-btn { width: 100%; padding: 12px; font-size: 14px; font-family: 'DM Sans', sans-serif; color: var(--ink-2); background: transparent; border: 1px solid var(--border); border-radius: 14px; cursor: pointer; margin-top: 4px; }
   .reset-btn:active { background: var(--border); }
   .error-msg { display: none; background: #FFF3CD; border: 1px solid #FFCA28; border-radius: 10px; padding: 10px 14px; font-size: 13px; color: #7A5400; margin-bottom: 12px; }
   .agent-error { display: none; background: #FDECEA; border: 1px solid #E88080; border-radius: 10px; padding: 8px 14px; font-size: 12px; color: #8C1A1A; margin-top: 8px; }
@@ -141,28 +118,27 @@
 
 <div class="body">
 
-  <!-- Agent card -->
   <div class="agent-card">
-    <p class="agent-label">Your details</p>
+    <p class="agent-label">Aapki details</p>
     <div id="agent-input-state">
       <div class="agent-field">
-        <label>Your name</label>
+        <label>Aapka naam</label>
         <div class="agent-input-wrap">
-          <input type="text" id="agent-name-input" placeholder="Enter your name" maxlength="50">
+          <input type="text" id="agent-name-input" placeholder="Naam likhein" maxlength="50">
           <button class="agent-save-btn" onclick="saveAgent()">Save</button>
         </div>
       </div>
       <div class="agent-field">
-        <label>Your mobile number</label>
+        <label>Aapka mobile number</label>
         <div class="agent-input-wrap">
-          <input type="tel" id="agent-phone-input" placeholder="10-digit number" maxlength="10">
+          <input type="tel" id="agent-phone-input" placeholder="10 digit number" maxlength="10">
         </div>
       </div>
-      <div class="agent-error" id="agent-error">Please enter your name and mobile number.</div>
+      <div class="agent-error" id="agent-error">Naam aur 10 digit mobile number daalna zaroori hai.</div>
     </div>
     <div id="agent-saved-state" style="display:none">
       <div class="agent-saved-row">
-        <div class="agent-saved-info">
+        <div>
           <p class="agent-saved-name" id="agent-saved-name"></p>
           <p class="agent-saved-sub" id="agent-saved-phone"></p>
         </div>
@@ -172,9 +148,9 @@
   </div>
 
   <div class="card">
-    <p class="sec-label">Merchant's current setup</p>
+    <p class="sec-label">Merchant ki current setup</p>
     <div class="field">
-      <label>Monthly card transaction volume</label>
+      <label>Maasik card transaction volume</label>
       <div class="input-wrap">
         <span class="input-prefix">₹</span>
         <input type="number" id="volume" placeholder="0" min="0">
@@ -189,7 +165,7 @@
         </div>
       </div>
       <div class="field">
-        <label>Monthly rental</label>
+        <label>Maasik kiraya (₹)</label>
         <div class="input-wrap">
           <span class="input-prefix">₹</span>
           <input type="number" id="cur-rental" placeholder="0" min="0">
@@ -199,7 +175,7 @@
   </div>
 
   <div class="card">
-    <p class="sec-label">Your offer</p>
+    <p class="sec-label">Aapka offer</p>
     <div class="two-col">
       <div class="field">
         <label>MDR %</label>
@@ -209,7 +185,7 @@
         </div>
       </div>
       <div class="field">
-        <label>Monthly rental</label>
+        <label>Maasik kiraya (₹)</label>
         <div class="input-wrap">
           <span class="input-prefix">₹</span>
           <input type="number" id="our-rental" placeholder="0" min="0">
@@ -218,76 +194,79 @@
     </div>
   </div>
 
-  <div class="error-msg" id="error-msg">Please fill in all fields before calculating.</div>
-  <button class="calc-btn" onclick="calculate()">Calculate savings</button>
+  <div class="error-msg" id="error-msg">Sabhi fields bharna zaroori hai.</div>
+  <button class="calc-btn" onclick="calculate()">Bachat calculate karein</button>
 
   <div class="results" id="results">
 
     <div class="hero-card" id="hero-card">
       <p class="verdict" id="verdict"></p>
       <p class="yearly-amount" id="yearly-amount"></p>
-      <p class="yearly-period">saved every year</p>
+      <p class="yearly-period">har saal ki bachat</p>
       <div class="hero-divider"></div>
       <div class="sub-row">
         <div>
-          <p class="sub-label">Over 5 years</p>
+          <p class="sub-label">5 saalon mein</p>
           <p class="fiveyear-amount" id="fiveyear-amount"></p>
         </div>
         <div class="monthly-block">
-          <p class="sub-label">Per month</p>
+          <p class="sub-label">Har maheene</p>
           <p class="monthly-amount" id="monthly-amount"></p>
         </div>
       </div>
     </div>
 
     <div class="card">
-      <p class="sec-label">Monthly breakup</p>
+      <p class="sec-label">Maasik breakdown</p>
       <div class="breakup-row">
-        <span class="breakup-label">MDR saving</span>
+        <span class="breakup-label">MDR bachat</span>
         <span class="breakup-val" id="mdr-val"></span>
       </div>
       <div class="breakup-row">
-        <span class="breakup-label">Rental saving</span>
+        <span class="breakup-label">Kiraya bachat</span>
         <span class="breakup-val" id="rental-val"></span>
       </div>
       <div class="total-row">
-        <span class="total-label">Net / month</span>
+        <span class="total-label">Kul / maheena</span>
         <span class="total-val" id="net-month-total"></span>
       </div>
     </div>
 
-    <!-- Red tip box -->
     <div class="tip-box" id="tip-box">
-      <p class="tip-box-label">When to come back</p>
-      <p class="tip-box-text">Our machine becomes the better deal for this merchant once their monthly card transactions cross</p>
+      <p class="tip-box-label">Wapas kab aayein</p>
+      <p class="tip-box-text">Hamaari machine tab faydemand hogi jab merchant ka maasik card transaction is amount se zyada ho jaaye:</p>
       <p class="tip-box-amount" id="tip-amount"></p>
-      <p class="tip-box-sub">Save this merchant's number and follow up when their business grows.</p>
+      <p class="tip-box-sub">Is merchant ka number save kar lein aur business badhne par wapas aayein.</p>
     </div>
 
-    <!-- PDF section — only green -->
-    <div class="pdf-section" id="pdf-section">
-      <p class="sec-label">Share with merchant</p>
-      <div class="field">
-        <label>Merchant mobile number</label>
-        <div class="input-wrap">
-          <input type="tel" id="merchant-phone" placeholder="10-digit number" maxlength="10" style="padding-left:14px">
-        </div>
-      </div>
-      <button class="pdf-btn" onclick="generatePDF()">Download savings PDF</button>
+    <div class="copy-section" id="copy-section">
+      <p class="sec-label">Merchant ko bhejein</p>
+      <div class="msg-preview" id="msg-preview"></div>
+      <button class="copy-btn" id="copy-btn" onclick="copyMessage()">
+        <span id="copy-icon">&#128203;</span>
+        <span id="copy-text">Message copy karein</span>
+      </button>
+      <p class="copy-hint">Copy ke baad WhatsApp kholen aur merchant ko paste karke bhejein</p>
     </div>
 
-    <button class="reset-btn" onclick="reset()">Calculate again</button>
+    <button class="reset-btn" onclick="reset()">← Dobara calculate karein</button>
   </div>
-
 </div>
 
 <script>
 var SHEET_URL = 'https://script.google.com/macros/s/AKfycbyCVUPwjRdGLFQ49QX2lwnhua8NcBzpk9a4mg4shEZLVrOvT-8o-MSmRzSYidNRO9RbAA/exec';
 var DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 var lastCalc = {};
+var lastMessage = '';
 
-function fmtINR(n) { return 'Rs.' + Math.abs(Math.round(n)).toLocaleString('en-IN'); }
-function fmtINRsym(n) { return '\u20b9' + Math.abs(Math.round(n)).toLocaleString('en-IN'); }
+function fmt(n) { return '\u20b9' + Math.abs(Math.round(n)).toLocaleString('en-IN'); }
+function fmtL(n) {
+  var abs = Math.abs(Math.round(n));
+  if (abs >= 10000000) return (abs/10000000).toFixed(1).replace(/\.0$/,'') + 'Cr';
+  if (abs >= 100000)   return (abs/100000).toFixed(1).replace(/\.0$/,'')  + 'L';
+  if (abs >= 1000)     return (abs/1000).toFixed(1).replace(/\.0$/,'')    + 'K';
+  return '\u20b9' + abs.toLocaleString('en-IN');
+}
 function sign(n) { return n >= 0 ? '+ ' : '\u2212 '; }
 
 // --- Agent ---
@@ -296,27 +275,21 @@ function initAgent() {
   var phone = localStorage.getItem('edc_agent_phone');
   if (name && phone) showSavedAgent(name, phone);
 }
-
 function saveAgent() {
   var name  = document.getElementById('agent-name-input').value.trim();
   var phone = document.getElementById('agent-phone-input').value.trim();
-  if (!name || phone.length < 10) {
-    document.getElementById('agent-error').style.display = 'block';
-    return;
-  }
+  if (!name || phone.length < 10) { document.getElementById('agent-error').style.display = 'block'; return; }
   localStorage.setItem('edc_agent_name', name);
   localStorage.setItem('edc_agent_phone', phone);
   document.getElementById('agent-error').style.display = 'none';
   showSavedAgent(name, phone);
 }
-
 function showSavedAgent(name, phone) {
   document.getElementById('agent-input-state').style.display = 'none';
   document.getElementById('agent-saved-state').style.display = 'block';
   document.getElementById('agent-saved-name').textContent = name;
   document.getElementById('agent-saved-phone').textContent = phone;
 }
-
 function editAgent() {
   document.getElementById('agent-name-input').value  = localStorage.getItem('edc_agent_name') || '';
   document.getElementById('agent-phone-input').value = localStorage.getItem('edc_agent_phone') || '';
@@ -324,14 +297,55 @@ function editAgent() {
   document.getElementById('agent-saved-state').style.display = 'none';
 }
 
+// --- Build WhatsApp message ---
+function buildMessage(c) {
+  var curMdrCost  = c.curMdr / 100 * c.vol;
+  var ourMdrCost  = c.ourMdr / 100 * c.vol;
+  var curTotal    = curMdrCost + c.curRental;
+  var ourTotal    = ourMdrCost + c.ourRental;
+
+  // Growth rows — start from current volume, go upward
+  var multipliers = [1, 1.5, 2, 3, 4, 5, 7.5, 10];
+  var growthLines = [];
+  var seen = {};
+  multipliers.forEach(function(m) {
+    var v = Math.round(c.vol * m / 10000) * 10000 || Math.round(c.vol * m);
+    if (v < c.vol || seen[v]) return;
+    seen[v] = true;
+    var nm = (c.mdrDiffPct * v) + (c.curRental - c.ourRental);
+    var ny = nm * 12;
+    if (nm > 0) growthLines.push('  ' + fmtL(v) + ' swipe \u2192 ' + fmt(ny) + '/saal ki bachat');
+  });
+  var growthBlock = growthLines.slice(0, 5).join('\n');
+
+  var msg =
+'Namaste \uD83D\uDC4B\n\n' +
+'Aapke liye ek *bachat report* taiyar ki hai humne \uD83D\uDE4F\n\n' +
+'\uD83D\uDCB3 *Aapka maasik card lendan:* ' + fmt(c.vol) + '\n\n' +
+'*Aap abhi kya de rahe hain:*\n' +
+'\u2022 MDR: ' + c.curMdr + '% \u2192 ' + fmt(curMdrCost) + '/maheena\n' +
+'\u2022 Kiraya: ' + fmt(c.curRental) + '/maheena\n' +
+'\u2022 *Kul: ' + fmt(curTotal) + '/maheena*\n\n' +
+'*Hamaari machine par:*\n' +
+'\u2022 MDR: ' + c.ourMdr + '% \u2192 ' + fmt(ourMdrCost) + '/maheena\n' +
+'\u2022 Kiraya: ' + fmt(c.ourRental) + '/maheena\n' +
+'\u2022 *Kul: ' + fmt(ourTotal) + '/maheena*\n\n' +
+'\u2705 *Aap bachate hain ' + fmt(c.netMonth) + ' har maheene*\n' +
+'\u2705 *Aap bachate hain ' + fmt(c.netYear) + ' har saal*\n' +
+'\u2705 *Aap bachate hain ' + fmt(c.netFiveYear) + ' paanch saalon mein*\n\n' +
+'\uD83D\uDCC8 *Jaise jaise aapka vyapaar badhega:*\n' +
+growthBlock + '\n\n' +
+'\uD83D\uDCDE Kisi bhi sawaal ke liye sampark karein:\n' +
+'*' + c.agentName + '* \u2014 ' + c.agentPhone;
+
+  return msg;
+}
+
 // --- Calculate ---
 function calculate() {
   var agentName  = localStorage.getItem('edc_agent_name') || '';
   var agentPhone = localStorage.getItem('edc_agent_phone') || '';
-  if (!agentName || !agentPhone) {
-    document.getElementById('agent-error').style.display = 'block';
-    return;
-  }
+  if (!agentName || !agentPhone) { document.getElementById('agent-error').style.display = 'block'; return; }
 
   var vol       = parseFloat(document.getElementById('volume').value);
   var curMdr    = parseFloat(document.getElementById('cur-mdr').value);
@@ -357,41 +371,46 @@ function calculate() {
   var result       = netMonth > 0 ? 'Green - Merchant Saves' : netMonth < 0 ? 'Red - Merchant Pays More' : 'No Difference';
   var breakevenVol = (netMonth < 0 && mdrDiffPct > 0) ? (ourRental - curRental) / mdrDiffPct : 0;
 
-  // Store for PDF
   lastCalc = { agentName, agentPhone, vol, curMdr, curRental, ourMdr, ourRental,
     mdrSaving, rentalSaving, netMonth, netYear, netFiveYear, mdrDiffPct,
     curTotalCost, ourTotalCost, result, breakevenVol };
 
-  // Update UI
+  // UI
   var mdrEl = document.getElementById('mdr-val');
-  mdrEl.textContent = sign(mdrSaving) + fmtINRsym(mdrSaving);
+  mdrEl.textContent = sign(mdrSaving) + fmt(mdrSaving);
   mdrEl.className = 'breakup-val ' + (mdrSaving>0?'pos':mdrSaving<0?'neg':'neu');
 
   var rentalEl = document.getElementById('rental-val');
-  rentalEl.textContent = sign(rentalSaving) + fmtINRsym(rentalSaving);
+  rentalEl.textContent = sign(rentalSaving) + fmt(rentalSaving);
   rentalEl.className = 'breakup-val ' + (rentalSaving>0?'pos':rentalSaving<0?'neg':'neu');
 
   var netTotalEl = document.getElementById('net-month-total');
-  netTotalEl.textContent = sign(netMonth) + fmtINRsym(netMonth);
+  netTotalEl.textContent = sign(netMonth) + fmt(netMonth);
   netTotalEl.className = 'total-val ' + (netMonth>0?'pos':netMonth<0?'neg':'neu');
 
-  document.getElementById('hero-card').className = 'hero-card ' + (netMonth>0?'saving':netMonth<0?'losing':'zero');
-  document.getElementById('verdict').textContent  = netMonth>0?'Merchant saves':netMonth<0?'Merchant pays more':'No difference';
-  document.getElementById('yearly-amount').textContent   = fmtINRsym(netYear);
-  document.getElementById('fiveyear-amount').textContent = fmtINRsym(netFiveYear);
-  document.getElementById('monthly-amount').textContent  = fmtINRsym(netMonth);
+  document.getElementById('hero-card').className = 'hero-card '+(netMonth>0?'saving':netMonth<0?'losing':'zero');
+  document.getElementById('verdict').textContent  = netMonth>0?'Merchant bachata hai':netMonth<0?'Merchant zyada deta hai':'Koi farak nahi';
+  document.getElementById('yearly-amount').textContent   = fmt(netYear);
+  document.getElementById('fiveyear-amount').textContent = fmt(netFiveYear);
+  document.getElementById('monthly-amount').textContent  = fmt(netMonth);
 
-  // Tip or PDF section
   if (netMonth < 0 && mdrDiffPct > 0) {
-    document.getElementById('tip-amount').textContent = fmtINRsym(breakevenVol) + ' per month';
+    document.getElementById('tip-amount').textContent = fmt(breakevenVol) + ' maasik';
     document.getElementById('tip-box').style.display = 'block';
-    document.getElementById('pdf-section').style.display = 'none';
+    document.getElementById('copy-section').style.display = 'none';
   } else if (netMonth > 0) {
     document.getElementById('tip-box').style.display = 'none';
-    document.getElementById('pdf-section').style.display = 'block';
+    // Build and show message
+    lastMessage = buildMessage(lastCalc);
+    document.getElementById('msg-preview').textContent = lastMessage;
+    document.getElementById('copy-section').style.display = 'block';
+    // Reset copy button
+    document.getElementById('copy-btn').className = 'copy-btn';
+    document.getElementById('copy-text').textContent = 'Message copy karein';
+    document.getElementById('copy-icon').textContent = '\uD83D\uDCCB';
   } else {
     document.getElementById('tip-box').style.display = 'none';
-    document.getElementById('pdf-section').style.display = 'none';
+    document.getElementById('copy-section').style.display = 'none';
   }
 
   document.getElementById('results').style.display = 'block';
@@ -409,173 +428,54 @@ function calculate() {
     netMonth: Math.round(netMonth), netYear: Math.round(netYear), netFiveYear: Math.round(netFiveYear),
     result, breakevenVol: Math.round(breakevenVol)
   };
-  fetch(SHEET_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) }).catch(function(){});
+  fetch(SHEET_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).catch(function(){});
 }
 
-// --- PDF ---
-function generatePDF() {
-  var c = lastCalc;
-  var merchantPhone = document.getElementById('merchant-phone').value.trim();
-  var { jsPDF } = window.jspdf;
-  var doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  var W = 210; var margin = 16; var col = W - margin * 2;
+// --- Copy ---
+function copyMessage() {
+  if (!lastMessage) return;
+  var btn = document.getElementById('copy-btn');
+  var txt = document.getElementById('copy-text');
+  var ico = document.getElementById('copy-icon');
 
-  // Colors
-  var BLACK    = [26, 26, 26];
-  var GREEN    = [42, 106, 16];
-  var GREENBG  = [232, 245, 226];
-  var GREENBDR = [125, 195, 90];
-  var GRAY     = [120, 120, 120];
-  var LGRAY    = [240, 240, 238];
-  var WHITE    = [255, 255, 255];
-  var YELLOW   = [255, 248, 231];
-  var YELLOWBDR= [245, 200, 66];
-
-  var y = 0;
-
-  // Header bar
-  doc.setFillColor(...BLACK);
-  doc.rect(0, 0, W, 38, 'F');
-  doc.setTextColor(...WHITE);
-  doc.setFontSize(7); doc.setFont('helvetica','normal');
-  doc.text('EDC SAVINGS REPORT', margin, 12);
-  doc.setFontSize(18); doc.setFont('helvetica','bold');
-  doc.text('Your savings with our machine', margin, 24);
-  doc.setFontSize(8); doc.setFont('helvetica','normal');
-  doc.setTextColor(180,180,180);
-  var now = new Date();
-  doc.text('Prepared on ' + now.toLocaleDateString('en-IN', {day:'numeric',month:'long',year:'numeric'}), margin, 32);
-  y = 46;
-
-  // Agent info box
-  doc.setFillColor(...LGRAY);
-  doc.roundedRect(margin, y, col, 18, 3, 3, 'F');
-  doc.setTextColor(...GRAY); doc.setFontSize(7); doc.setFont('helvetica','normal');
-  doc.text('YOUR AGENT', margin+4, y+6);
-  doc.setTextColor(...BLACK); doc.setFontSize(10); doc.setFont('helvetica','bold');
-  doc.text(c.agentName, margin+4, y+12);
-  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...GRAY);
-  doc.text('Contact: ' + c.agentPhone, margin+4, y+17);
-  if (merchantPhone) {
-    doc.text('Merchant: ' + merchantPhone, margin + col/2, y+12);
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(lastMessage).then(function() {
+      showCopied(btn, txt, ico);
+    }).catch(function() { fallbackCopy(btn, txt, ico); });
+  } else {
+    fallbackCopy(btn, txt, ico);
   }
-  y += 24;
+}
 
-  // Big saving box
-  doc.setFillColor(...GREENBG);
-  doc.setDrawColor(...GREENBDR);
-  doc.setLineWidth(0.5);
-  doc.roundedRect(margin, y, col, 36, 4, 4, 'FD');
-  doc.setTextColor(...GREEN); doc.setFontSize(7); doc.setFont('helvetica','bold');
-  doc.text('YOU SAVE EVERY YEAR', margin+6, y+8);
-  doc.setFontSize(28); doc.setFont('helvetica','bold');
-  doc.text(fmtINR(c.netYear), margin+6, y+22);
-  // 5yr and monthly
-  doc.setFontSize(7); doc.setFont('helvetica','normal'); doc.setTextColor(...GREEN);
-  doc.text('OVER 5 YEARS', margin+6, y+30);
-  doc.setFontSize(12); doc.setFont('helvetica','bold');
-  doc.text(fmtINR(c.netFiveYear), margin+6, y+36);
-  doc.setFontSize(7); doc.setFont('helvetica','normal');
-  doc.text('PER MONTH', margin+col/2, y+30);
-  doc.setFontSize(11); doc.setFont('helvetica','bold');
-  doc.text(fmtINR(c.netMonth), margin+col/2, y+36);
-  y += 42;
+function fallbackCopy(btn, txt, ico) {
+  var ta = document.createElement('textarea');
+  ta.value = lastMessage;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  try { document.execCommand('copy'); showCopied(btn, txt, ico); } catch(e) { alert('Copy nahi hua. Message manually select karein.'); }
+  document.body.removeChild(ta);
+}
 
-  // Comparison table
-  doc.setTextColor(...GRAY); doc.setFontSize(7); doc.setFont('helvetica','bold');
-  doc.text('MONTHLY COST COMPARISON', margin, y+5);
-  y += 8;
-  doc.autoTable({
-    startY: y,
-    margin: { left: margin, right: margin },
-    head: [['', 'Current Setup', 'Our Machine', 'Saving']],
-    body: [
-      ['MDR %', c.curMdr + '%', c.ourMdr + '%', (c.curMdr - c.ourMdr).toFixed(2) + '%'],
-      ['Monthly Rental', fmtINR(c.curRental), fmtINR(c.ourRental), fmtINR(c.curRental - c.ourRental)],
-      ['MDR Cost', fmtINR(c.curMdr/100*c.vol), fmtINR(c.ourMdr/100*c.vol), fmtINR(c.mdrSaving)],
-      ['Total Monthly Cost', fmtINR(c.curTotalCost), fmtINR(c.ourTotalCost), fmtINR(c.netMonth)],
-    ],
-    headStyles: { fillColor: BLACK, textColor: WHITE, fontSize: 8, fontStyle: 'bold' },
-    bodyStyles: { fontSize: 8, textColor: BLACK },
-    alternateRowStyles: { fillColor: [248, 248, 246] },
-    columnStyles: { 3: { textColor: GREEN, fontStyle: 'bold' } },
-    theme: 'grid',
-  });
-  y = doc.lastAutoTable.finalY + 8;
-
-  // Growth table
-  doc.setTextColor(...GRAY); doc.setFontSize(7); doc.setFont('helvetica','bold');
-  doc.text('YOUR SAVINGS AS YOUR BUSINESS GROWS', margin, y+5);
-  doc.setFontSize(6); doc.setFont('helvetica','normal');
-  doc.text('Based on your current MDR difference. The more you swipe, the more you save.', margin, y+10);
-  y += 13;
-
-  // Build growth rows starting from current volume upward
-  var baseVol = c.vol;
-  var growthVolumes = [];
-  var multipliers = [1, 1.5, 2, 3, 4, 5, 6, 7.5, 10];
-  multipliers.forEach(function(m) {
-    var v = Math.round(baseVol * m / 10000) * 10000;
-    if (v >= baseVol && growthVolumes.indexOf(v) === -1) growthVolumes.push(v);
-  });
-  // Ensure we have at most 8 rows, starting from current
-  growthVolumes = growthVolumes.slice(0, 8);
-
-  var growthRows = growthVolumes.map(function(v) {
-    var mS = c.mdrDiffPct * v;
-    var rS = c.curRental - c.ourRental;
-    var nm = mS + rS;
-    var ny = nm * 12;
-    var isCurrent = v === Math.round(baseVol / 10000) * 10000 || Math.abs(v - baseVol) < baseVol * 0.05;
-    return [
-      (isCurrent ? '>> ' : '') + fmtINR(v) + (isCurrent ? ' (Current)' : ''),
-      fmtINR(ny),
-      fmtINR(nm)
-    ];
-  });
-
-  doc.autoTable({
-    startY: y,
-    margin: { left: margin, right: margin },
-    head: [['Monthly Card Volume', 'Yearly Saving', 'Monthly Saving']],
-    body: growthRows,
-    headStyles: { fillColor: GREEN, textColor: WHITE, fontSize: 8, fontStyle: 'bold' },
-    bodyStyles: { fontSize: 8, textColor: BLACK },
-    alternateRowStyles: { fillColor: [248, 248, 246] },
-    didParseCell: function(data) {
-      if (data.section === 'body' && data.row.index === 0) {
-        data.cell.styles.fillColor = GREENBG;
-        data.cell.styles.fontStyle = 'bold';
-        data.cell.styles.textColor = GREEN;
-      }
-    },
-    theme: 'grid',
-  });
-  y = doc.lastAutoTable.finalY + 8;
-
-  // Footer note
-  doc.setFillColor(...YELLOW);
-  doc.setDrawColor(...YELLOWBDR);
-  doc.roundedRect(margin, y, col, 16, 3, 3, 'FD');
-  doc.setTextColor([90, 62, 0]); doc.setFontSize(8); doc.setFont('helvetica','bold');
-  doc.text('Want to switch? Contact your agent:', margin+4, y+7);
-  doc.setFont('helvetica','normal');
-  doc.text(c.agentName + '  |  ' + c.agentPhone, margin+4, y+13);
-
-  // Footer
-  doc.setTextColor(...GRAY); doc.setFontSize(7); doc.setFont('helvetica','normal');
-  doc.text('Savings calculated based on MDR and rental difference. Actual savings may vary.', margin, 290);
-
-  doc.save('EDC-Savings-Report.pdf');
+function showCopied(btn, txt, ico) {
+  btn.className = 'copy-btn copied';
+  ico.textContent = '\u2714\uFE0F';
+  txt.textContent = 'Copy ho gaya! Ab WhatsApp par paste karein';
+  setTimeout(function() {
+    btn.className = 'copy-btn';
+    ico.textContent = '\uD83D\uDCCB';
+    txt.textContent = 'Message copy karein';
+  }, 3000);
 }
 
 function reset() {
-  ['volume','cur-mdr','cur-rental','our-mdr','our-rental','merchant-phone'].forEach(function(id){ document.getElementById(id).value=''; });
+  ['volume','cur-mdr','cur-rental','our-mdr','our-rental'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('results').style.display = 'none';
   document.getElementById('error-msg').style.display = 'none';
   document.getElementById('tip-box').style.display = 'none';
-  document.getElementById('pdf-section').style.display = 'none';
-  lastCalc = {};
+  document.getElementById('copy-section').style.display = 'none';
+  lastCalc = {}; lastMessage = '';
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
