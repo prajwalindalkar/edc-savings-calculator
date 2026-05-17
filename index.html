@@ -5,456 +5,130 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>EDC Savings Calculator</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
   :root {
-    --green-bg: #E8F5E2;
-    --green-border: #7DC35A;
-    --green-text: #2A6A10;
-    --green-sub: #3D8C1E;
-    --red-bg: #FDECEA;
-    --red-border: #E88080;
-    --red-text: #8C1A1A;
-    --red-sub: #B02020;
-    --ink: #1A1A1A;
-    --ink-2: #555;
-    --ink-3: #888;
-    --surface: #F5F4F0;
-    --card: #FFFFFF;
-    --border: #E2E0D8;
+    --green-bg: #E8F5E2; --green-border: #7DC35A; --green-text: #2A6A10; --green-sub: #3D8C1E;
+    --red-bg: #FDECEA; --red-border: #E88080; --red-text: #8C1A1A; --red-sub: #B02020;
+    --ink: #1A1A1A; --ink-2: #555; --ink-3: #888; --surface: #F5F4F0; --card: #FFFFFF; --border: #E2E0D8;
   }
-
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--surface);
-    color: var(--ink);
-    min-height: 100vh;
-    padding: 0 0 2.5rem;
-  }
-
-  .header {
-    background: var(--ink);
-    color: #fff;
-    padding: 1.5rem 1.25rem 1.25rem;
-    margin-bottom: 1.25rem;
-  }
-
-  .header-label {
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: .12em;
-    text-transform: uppercase;
-    color: #999;
-    margin-bottom: 6px;
-  }
-
-  .header h1 {
-    font-size: 22px;
-    font-weight: 600;
-    line-height: 1.2;
-    margin-bottom: 4px;
-  }
-
+  body { font-family: 'DM Sans', sans-serif; background: var(--surface); color: var(--ink); min-height: 100vh; padding: 0 0 2.5rem; }
+  .header { background: var(--ink); color: #fff; padding: 1.5rem 1.25rem 1.25rem; margin-bottom: 1.25rem; }
+  .header-label { font-size: 10px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: #999; margin-bottom: 6px; }
+  .header h1 { font-size: 22px; font-weight: 600; line-height: 1.2; margin-bottom: 4px; }
   .header p { font-size: 13px; color: #aaa; }
-
   .body { padding: 0 1rem; }
-
-  .card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 1.1rem 1.25rem;
-    margin-bottom: 12px;
-  }
-
-  .sec-label {
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-    color: var(--ink-3);
-    margin-bottom: 14px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .sec-label::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
-
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 1.1rem 1.25rem; margin-bottom: 12px; }
+  .sec-label { font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
   .field { margin-bottom: 12px; }
   .field:last-child { margin-bottom: 0; }
-
-  .field label {
-    display: block;
-    font-size: 12px;
-    color: var(--ink-2);
-    margin-bottom: 5px;
-    font-weight: 500;
-  }
-
+  .field label { display: block; font-size: 12px; color: var(--ink-2); margin-bottom: 5px; font-weight: 500; }
   .input-wrap { position: relative; }
-
-  .input-prefix {
-    position: absolute;
-    left: 11px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 14px;
-    color: var(--ink-3);
-    pointer-events: none;
-    font-family: 'DM Mono', monospace;
+  .input-prefix { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); font-size: 14px; color: var(--ink-3); pointer-events: none; font-family: 'DM Mono', monospace; }
+  .input-suffix { position: absolute; right: 11px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--ink-3); pointer-events: none; }
+  input[type="number"], input[type="text"], input[type="tel"] {
+    width: 100%; padding: 10px 36px 10px 28px; font-size: 15px; font-family: 'DM Mono', monospace; font-weight: 500;
+    border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--ink);
+    appearance: none; -moz-appearance: textfield; transition: border-color .15s;
   }
-
-  .input-suffix {
-    position: absolute;
-    right: 11px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 13px;
-    color: var(--ink-3);
-    pointer-events: none;
-  }
-
-  input[type="number"],
-  input[type="text"] {
-    width: 100%;
-    padding: 10px 36px 10px 28px;
-    font-size: 15px;
-    font-family: 'DM Sans', monospace;
-    font-weight: 500;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    background: var(--surface);
-    color: var(--ink);
-    appearance: none;
-    -moz-appearance: textfield;
-    transition: border-color .15s;
-  }
-
-  input[type="text"] {
-    font-family: 'DM Sans', sans-serif;
-    padding: 10px 80px 10px 14px;
-  }
-
-  input[type="number"]::-webkit-inner-spin-button,
-  input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
-
-  input[type="number"]:focus,
-  input[type="text"]:focus {
-    outline: none;
-    border-color: var(--ink);
-    background: #fff;
-  }
-
+  input[type="text"], input[type="tel"] { font-family: 'DM Sans', sans-serif; padding: 10px 90px 10px 14px; }
+  input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+  input:focus { outline: none; border-color: var(--ink); background: #fff; }
   .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
-  /* Agent name card */
-  .agent-card {
-    background: var(--ink);
-    border-radius: 14px;
-    padding: 1rem 1.25rem;
-    margin-bottom: 12px;
-  }
-
-  .agent-label {
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-    color: #888;
-    margin-bottom: 8px;
-  }
-
+  /* Agent card */
+  .agent-card { background: var(--ink); border-radius: 14px; padding: 1rem 1.25rem; margin-bottom: 12px; }
+  .agent-label { font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: #888; margin-bottom: 10px; }
+  .agent-field { margin-bottom: 10px; }
+  .agent-field:last-child { margin-bottom: 0; }
+  .agent-field label { display: block; font-size: 11px; color: #888; margin-bottom: 4px; font-weight: 500; }
   .agent-input-wrap { position: relative; }
-
   .agent-input-wrap input {
-    width: 100%;
-    padding: 10px 80px 10px 14px;
-    font-size: 15px;
-    font-family: 'DM Sans', sans-serif;
-    font-weight: 500;
-    border: 1px solid #444;
-    border-radius: 10px;
-    background: #2A2A2A;
-    color: #fff;
+    width: 100%; padding: 9px 80px 9px 14px; font-size: 15px; font-family: 'DM Sans', sans-serif; font-weight: 500;
+    border: 1px solid #444; border-radius: 10px; background: #2A2A2A; color: #fff;
   }
-
   .agent-input-wrap input::placeholder { color: #666; }
   .agent-input-wrap input:focus { outline: none; border-color: #777; background: #333; }
-
-  .agent-change-btn {
-    position: absolute;
-    right: 8px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 11px;
-    font-weight: 600;
-    color: #aaa;
-    background: #3A3A3A;
-    border: none;
-    border-radius: 6px;
-    padding: 4px 10px;
-    cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
+  .agent-save-btn {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    font-size: 11px; font-weight: 600; color: #aaa; background: #3A3A3A;
+    border: none; border-radius: 6px; padding: 4px 10px; cursor: pointer; font-family: 'DM Sans', sans-serif;
   }
-
-  .agent-saved-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .agent-saved-name {
-    font-size: 16px;
-    font-weight: 600;
-    color: #fff;
-  }
-
-  .agent-saved-sub {
-    font-size: 11px;
-    color: #888;
-    margin-top: 2px;
-  }
-
+  .agent-saved-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .agent-saved-row:last-child { margin-bottom: 0; }
+  .agent-saved-info .agent-saved-name { font-size: 15px; font-weight: 600; color: #fff; }
+  .agent-saved-info .agent-saved-sub { font-size: 11px; color: #888; margin-top: 1px; }
   .agent-edit-btn {
-    font-size: 11px;
-    font-weight: 600;
-    color: #aaa;
-    background: #2A2A2A;
-    border: 1px solid #444;
-    border-radius: 8px;
-    padding: 5px 12px;
-    cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
-    white-space: nowrap;
+    font-size: 11px; font-weight: 600; color: #aaa; background: #2A2A2A;
+    border: 1px solid #444; border-radius: 8px; padding: 5px 12px; cursor: pointer; font-family: 'DM Sans', sans-serif; white-space: nowrap;
   }
 
   .calc-btn {
-    width: 100%;
-    padding: 15px;
-    font-size: 15px;
-    font-weight: 600;
-    font-family: 'DM Sans', sans-serif;
-    background: var(--ink);
-    color: #fff;
-    border: none;
-    border-radius: 14px;
-    cursor: pointer;
-    margin-bottom: 14px;
-    transition: opacity .15s, transform .1s;
+    width: 100%; padding: 15px; font-size: 15px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+    background: var(--ink); color: #fff; border: none; border-radius: 14px; cursor: pointer; margin-bottom: 14px; transition: opacity .15s, transform .1s;
   }
-
   .calc-btn:active { opacity: .85; transform: scale(.98); }
-
   .results { display: none; }
 
-  .hero-card {
-    border-radius: 14px;
-    padding: 1.5rem 1.25rem 1.25rem;
-    margin-bottom: 12px;
-    border: 1px solid;
-  }
-
+  /* Hero card */
+  .hero-card { border-radius: 14px; padding: 1.5rem 1.25rem 1.25rem; margin-bottom: 12px; border: 1px solid; }
   .hero-card.saving { background: var(--green-bg); border-color: var(--green-border); }
-  .hero-card.losing { background: var(--red-bg);   border-color: var(--red-border); }
-  .hero-card.zero   { background: #F5F4F0;          border-color: var(--border); }
-
-  .verdict {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-  }
-  .saving .verdict { color: var(--green-sub); }
-  .losing .verdict { color: var(--red-sub); }
-  .zero   .verdict { color: var(--ink-2); }
-
-  .yearly-amount {
-    font-size: 52px;
-    font-weight: 600;
-    font-family: 'DM Mono', monospace;
-    line-height: 1;
-    margin-bottom: 2px;
-    letter-spacing: -.02em;
-  }
-  .saving .yearly-amount { color: var(--green-text); }
-  .losing .yearly-amount { color: var(--red-text); }
-  .zero   .yearly-amount { color: var(--ink); }
-
-  .yearly-period {
-    font-size: 13px;
-    font-weight: 500;
-    margin-bottom: 18px;
-  }
-  .saving .yearly-period { color: var(--green-sub); }
-  .losing .yearly-period { color: var(--red-sub); }
-  .zero   .yearly-period { color: var(--ink-2); }
-
-  .hero-divider {
-    height: 1px;
-    margin: 0 0 16px;
-    opacity: .4;
-  }
-  .saving .hero-divider { background: var(--green-border); }
-  .losing .hero-divider { background: var(--red-border); }
-  .zero   .hero-divider { background: var(--border); opacity: 1; }
-
-  .sub-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-  }
-
-  .sub-label {
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    margin-bottom: 3px;
-  }
-  .saving .sub-label { color: var(--green-sub); }
-  .losing .sub-label { color: var(--red-sub); }
-  .zero   .sub-label { color: var(--ink-3); }
-
-  .fiveyear-amount {
-    font-size: 24px;
-    font-weight: 600;
-    font-family: 'DM Mono', monospace;
-    line-height: 1;
-  }
-  .saving .fiveyear-amount { color: var(--green-text); }
-  .losing .fiveyear-amount { color: var(--red-text); }
-  .zero   .fiveyear-amount { color: var(--ink); }
-
+  .hero-card.losing { background: var(--red-bg); border-color: var(--red-border); }
+  .hero-card.zero { background: #F5F4F0; border-color: var(--border); }
+  .verdict { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 8px; }
+  .saving .verdict { color: var(--green-sub); } .losing .verdict { color: var(--red-sub); } .zero .verdict { color: var(--ink-2); }
+  .yearly-amount { font-size: 52px; font-weight: 600; font-family: 'DM Mono', monospace; line-height: 1; margin-bottom: 2px; letter-spacing: -.02em; }
+  .saving .yearly-amount { color: var(--green-text); } .losing .yearly-amount { color: var(--red-text); } .zero .yearly-amount { color: var(--ink); }
+  .yearly-period { font-size: 13px; font-weight: 500; margin-bottom: 18px; }
+  .saving .yearly-period { color: var(--green-sub); } .losing .yearly-period { color: var(--red-sub); } .zero .yearly-period { color: var(--ink-2); }
+  .hero-divider { height: 1px; margin: 0 0 16px; opacity: .4; }
+  .saving .hero-divider { background: var(--green-border); } .losing .hero-divider { background: var(--red-border); } .zero .hero-divider { background: var(--border); opacity:1; }
+  .sub-row { display: flex; justify-content: space-between; align-items: flex-end; }
+  .sub-label { font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 3px; }
+  .saving .sub-label { color: var(--green-sub); } .losing .sub-label { color: var(--red-sub); } .zero .sub-label { color: var(--ink-3); }
+  .fiveyear-amount { font-size: 24px; font-weight: 600; font-family: 'DM Mono', monospace; line-height: 1; }
+  .saving .fiveyear-amount { color: var(--green-text); } .losing .fiveyear-amount { color: var(--red-text); } .zero .fiveyear-amount { color: var(--ink); }
   .monthly-block { text-align: right; }
+  .monthly-amount { font-size: 15px; font-weight: 500; font-family: 'DM Mono', monospace; line-height: 1; }
+  .saving .monthly-amount { color: var(--green-sub); } .losing .monthly-amount { color: var(--red-sub); } .zero .monthly-amount { color: var(--ink-2); }
 
-  .monthly-amount {
-    font-size: 15px;
-    font-weight: 500;
-    font-family: 'DM Mono', monospace;
-    line-height: 1;
-  }
-  .saving .monthly-amount { color: var(--green-sub); }
-  .losing .monthly-amount { color: var(--red-sub); }
-  .zero   .monthly-amount { color: var(--ink-2); }
-
-  .breakup-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 9px 0;
-    border-bottom: 1px solid var(--border);
-  }
+  /* Breakup */
+  .breakup-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--border); }
   .breakup-row:last-child { border-bottom: none; }
-
   .breakup-label { font-size: 13px; color: var(--ink-2); }
-
-  .breakup-val {
-    font-size: 14px;
-    font-weight: 500;
-    font-family: 'DM Mono', monospace;
-  }
-  .breakup-val.pos { color: var(--green-text); }
-  .breakup-val.neg { color: var(--red-text); }
-  .breakup-val.neu { color: var(--ink-3); }
-
-  .total-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 0 0;
-    margin-top: 4px;
-    border-top: 1.5px solid var(--ink);
-  }
+  .breakup-val { font-size: 14px; font-weight: 500; font-family: 'DM Mono', monospace; }
+  .breakup-val.pos { color: var(--green-text); } .breakup-val.neg { color: var(--red-text); } .breakup-val.neu { color: var(--ink-3); }
+  .total-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0 0; margin-top: 4px; border-top: 1.5px solid var(--ink); }
   .total-label { font-size: 14px; font-weight: 600; color: var(--ink); }
-  .total-val {
-    font-size: 16px;
-    font-weight: 600;
-    font-family: 'DM Mono', monospace;
-  }
-  .total-val.pos { color: var(--green-text); }
-  .total-val.neg { color: var(--red-text); }
-  .total-val.neu { color: var(--ink-2); }
+  .total-val { font-size: 16px; font-weight: 600; font-family: 'DM Mono', monospace; }
+  .total-val.pos { color: var(--green-text); } .total-val.neg { color: var(--red-text); } .total-val.neu { color: var(--ink-2); }
 
-  .tip-box {
-    display: none;
-    background: #FFF8E7;
-    border: 1px solid #F5C842;
-    border-radius: 14px;
-    padding: 1rem 1.25rem;
-    margin-bottom: 12px;
-  }
+  /* Tip box */
+  .tip-box { display: none; background: #FFF8E7; border: 1px solid #F5C842; border-radius: 14px; padding: 1rem 1.25rem; margin-bottom: 12px; }
+  .tip-box-label { font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: #9A6F00; margin-bottom: 6px; }
+  .tip-box-text { font-size: 14px; color: #5A3E00; line-height: 1.5; }
+  .tip-box-amount { font-size: 22px; font-weight: 600; font-family: 'DM Mono', monospace; color: #7A5000; margin: 6px 0 4px; }
+  .tip-box-sub { font-size: 12px; color: #9A7020; }
 
-  .tip-box-label {
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-    color: #9A6F00;
-    margin-bottom: 6px;
+  /* Merchant phone + PDF section */
+  .pdf-section { display: none; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 1.1rem 1.25rem; margin-bottom: 12px; }
+  .pdf-section .sec-label { margin-bottom: 14px; }
+  .pdf-btn {
+    width: 100%; padding: 14px; font-size: 15px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+    background: var(--green-text); color: #fff; border: none; border-radius: 14px; cursor: pointer; margin-top: 12px; transition: opacity .15s;
   }
-
-  .tip-box-text {
-    font-size: 14px;
-    color: #5A3E00;
-    line-height: 1.5;
-  }
-
-  .tip-box-amount {
-    font-size: 22px;
-    font-weight: 600;
-    font-family: 'DM Mono', monospace;
-    color: #7A5000;
-    margin: 6px 0 4px;
-  }
-
-  .tip-box-sub {
-    font-size: 12px;
-    color: #9A7020;
-  }
+  .pdf-btn:active { opacity: .85; }
 
   .reset-btn {
-    width: 100%;
-    padding: 12px;
-    font-size: 14px;
-    font-family: 'DM Sans', sans-serif;
-    color: var(--ink-2);
-    background: transparent;
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    cursor: pointer;
-    margin-top: 4px;
+    width: 100%; padding: 12px; font-size: 14px; font-family: 'DM Sans', sans-serif;
+    color: var(--ink-2); background: transparent; border: 1px solid var(--border); border-radius: 14px; cursor: pointer; margin-top: 4px;
   }
   .reset-btn:active { background: var(--border); }
-
-  .error-msg {
-    display: none;
-    background: #FFF3CD;
-    border: 1px solid #FFCA28;
-    border-radius: 10px;
-    padding: 10px 14px;
-    font-size: 13px;
-    color: #7A5400;
-    margin-bottom: 12px;
-  }
-
-  .agent-error {
-    display: none;
-    background: #FDECEA;
-    border: 1px solid #E88080;
-    border-radius: 10px;
-    padding: 8px 14px;
-    font-size: 13px;
-    color: #8C1A1A;
-    margin-top: 8px;
-  }
+  .error-msg { display: none; background: #FFF3CD; border: 1px solid #FFCA28; border-radius: 10px; padding: 10px 14px; font-size: 13px; color: #7A5400; margin-bottom: 12px; }
+  .agent-error { display: none; background: #FDECEA; border: 1px solid #E88080; border-radius: 10px; padding: 8px 14px; font-size: 12px; color: #8C1A1A; margin-top: 8px; }
 </style>
 </head>
 <body>
@@ -467,25 +141,32 @@
 
 <div class="body">
 
-  <!-- Agent name card -->
+  <!-- Agent card -->
   <div class="agent-card">
-    <p class="agent-label">Agent name</p>
-    <!-- Input state -->
+    <p class="agent-label">Your details</p>
     <div id="agent-input-state">
-      <div class="agent-input-wrap">
-        <input type="text" id="agent-name-input" placeholder="Enter your name" maxlength="50">
-        <button class="agent-change-btn" onclick="saveAgentName()">Save</button>
+      <div class="agent-field">
+        <label>Your name</label>
+        <div class="agent-input-wrap">
+          <input type="text" id="agent-name-input" placeholder="Enter your name" maxlength="50">
+          <button class="agent-save-btn" onclick="saveAgent()">Save</button>
+        </div>
       </div>
-      <div class="agent-error" id="agent-error">Please enter your name before calculating.</div>
+      <div class="agent-field">
+        <label>Your mobile number</label>
+        <div class="agent-input-wrap">
+          <input type="tel" id="agent-phone-input" placeholder="10-digit number" maxlength="10">
+        </div>
+      </div>
+      <div class="agent-error" id="agent-error">Please enter your name and mobile number.</div>
     </div>
-    <!-- Saved state -->
     <div id="agent-saved-state" style="display:none">
       <div class="agent-saved-row">
-        <div>
+        <div class="agent-saved-info">
           <p class="agent-saved-name" id="agent-saved-name"></p>
-          <p class="agent-saved-sub">Tap change to update your name</p>
+          <p class="agent-saved-sub" id="agent-saved-phone"></p>
         </div>
-        <button class="agent-edit-btn" onclick="editAgentName()">Change</button>
+        <button class="agent-edit-btn" onclick="editAgent()">Change</button>
       </div>
     </div>
   </div>
@@ -538,7 +219,6 @@
   </div>
 
   <div class="error-msg" id="error-msg">Please fill in all fields before calculating.</div>
-
   <button class="calc-btn" onclick="calculate()">Calculate savings</button>
 
   <div class="results" id="results">
@@ -576,183 +256,330 @@
       </div>
     </div>
 
+    <!-- Red tip box -->
     <div class="tip-box" id="tip-box">
-      <p class="tip-box-label">💡 When to come back</p>
+      <p class="tip-box-label">When to come back</p>
       <p class="tip-box-text">Our machine becomes the better deal for this merchant once their monthly card transactions cross</p>
       <p class="tip-box-amount" id="tip-amount"></p>
       <p class="tip-box-sub">Save this merchant's number and follow up when their business grows.</p>
     </div>
 
-    <button class="reset-btn" onclick="reset()">← Calculate again</button>
+    <!-- PDF section — only green -->
+    <div class="pdf-section" id="pdf-section">
+      <p class="sec-label">Share with merchant</p>
+      <div class="field">
+        <label>Merchant mobile number</label>
+        <div class="input-wrap">
+          <input type="tel" id="merchant-phone" placeholder="10-digit number" maxlength="10" style="padding-left:14px">
+        </div>
+      </div>
+      <button class="pdf-btn" onclick="generatePDF()">Download savings PDF</button>
+    </div>
+
+    <button class="reset-btn" onclick="reset()">Calculate again</button>
   </div>
 
 </div>
 
 <script>
-  var SHEET_URL = 'https://script.google.com/macros/s/AKfycbyCVUPwjRdGLFQ49QX2lwnhua8NcBzpk9a4mg4shEZLVrOvT-8o-MSmRzSYidNRO9RbAA/exec';
+var SHEET_URL = 'https://script.google.com/macros/s/AKfycbyCVUPwjRdGLFQ49QX2lwnhua8NcBzpk9a4mg4shEZLVrOvT-8o-MSmRzSYidNRO9RbAA/exec';
+var DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+var lastCalc = {};
 
-  var DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+function fmtINR(n) { return 'Rs.' + Math.abs(Math.round(n)).toLocaleString('en-IN'); }
+function fmtINRsym(n) { return '\u20b9' + Math.abs(Math.round(n)).toLocaleString('en-IN'); }
+function sign(n) { return n >= 0 ? '+ ' : '\u2212 '; }
 
-  // --- Agent name logic ---
-  function initAgent() {
-    var saved = localStorage.getItem('edc_agent_name');
-    if (saved) {
-      showSavedState(saved);
-    }
+// --- Agent ---
+function initAgent() {
+  var name  = localStorage.getItem('edc_agent_name');
+  var phone = localStorage.getItem('edc_agent_phone');
+  if (name && phone) showSavedAgent(name, phone);
+}
+
+function saveAgent() {
+  var name  = document.getElementById('agent-name-input').value.trim();
+  var phone = document.getElementById('agent-phone-input').value.trim();
+  if (!name || phone.length < 10) {
+    document.getElementById('agent-error').style.display = 'block';
+    return;
+  }
+  localStorage.setItem('edc_agent_name', name);
+  localStorage.setItem('edc_agent_phone', phone);
+  document.getElementById('agent-error').style.display = 'none';
+  showSavedAgent(name, phone);
+}
+
+function showSavedAgent(name, phone) {
+  document.getElementById('agent-input-state').style.display = 'none';
+  document.getElementById('agent-saved-state').style.display = 'block';
+  document.getElementById('agent-saved-name').textContent = name;
+  document.getElementById('agent-saved-phone').textContent = phone;
+}
+
+function editAgent() {
+  document.getElementById('agent-name-input').value  = localStorage.getItem('edc_agent_name') || '';
+  document.getElementById('agent-phone-input').value = localStorage.getItem('edc_agent_phone') || '';
+  document.getElementById('agent-input-state').style.display = 'block';
+  document.getElementById('agent-saved-state').style.display = 'none';
+}
+
+// --- Calculate ---
+function calculate() {
+  var agentName  = localStorage.getItem('edc_agent_name') || '';
+  var agentPhone = localStorage.getItem('edc_agent_phone') || '';
+  if (!agentName || !agentPhone) {
+    document.getElementById('agent-error').style.display = 'block';
+    return;
   }
 
-  function saveAgentName() {
-    var val = document.getElementById('agent-name-input').value.trim();
-    if (!val) {
-      document.getElementById('agent-error').style.display = 'block';
-      return;
-    }
-    localStorage.setItem('edc_agent_name', val);
-    document.getElementById('agent-error').style.display = 'none';
-    showSavedState(val);
-  }
+  var vol       = parseFloat(document.getElementById('volume').value);
+  var curMdr    = parseFloat(document.getElementById('cur-mdr').value);
+  var curRental = parseFloat(document.getElementById('cur-rental').value);
+  var ourMdr    = parseFloat(document.getElementById('our-mdr').value);
+  var ourRental = parseFloat(document.getElementById('our-rental').value);
 
-  function showSavedState(name) {
-    document.getElementById('agent-input-state').style.display = 'none';
-    document.getElementById('agent-saved-state').style.display = 'block';
-    document.getElementById('agent-saved-name').textContent = name;
-  }
-
-  function editAgentName() {
-    var current = localStorage.getItem('edc_agent_name') || '';
-    document.getElementById('agent-name-input').value = current;
-    document.getElementById('agent-input-state').style.display = 'block';
-    document.getElementById('agent-saved-state').style.display = 'none';
-  }
-
-  // --- Formatting ---
-  function fmtINR(n) {
-    return '₹' + Math.abs(Math.round(n)).toLocaleString('en-IN');
-  }
-
-  function sign(n) { return n >= 0 ? '+ ' : '− '; }
-
-  // --- Main calculate ---
-  function calculate() {
-    var agentName = localStorage.getItem('edc_agent_name') || '';
-    if (!agentName) {
-      document.getElementById('agent-error').style.display = 'block';
-      document.getElementById('agent-name-input').focus();
-      return;
-    }
-
-    var vol       = parseFloat(document.getElementById('volume').value);
-    var curMdr    = parseFloat(document.getElementById('cur-mdr').value);
-    var curRental = parseFloat(document.getElementById('cur-rental').value);
-    var ourMdr    = parseFloat(document.getElementById('our-mdr').value);
-    var ourRental = parseFloat(document.getElementById('our-rental').value);
-
-    var errEl = document.getElementById('error-msg');
-
-    if (isNaN(vol) || isNaN(curMdr) || isNaN(curRental) || isNaN(ourMdr) || isNaN(ourRental)) {
-      errEl.style.display = 'block';
-      document.getElementById('results').style.display = 'none';
-      return;
-    }
-
-    errEl.style.display = 'none';
-
-    var mdrSaving    = (curMdr - ourMdr) / 100 * vol;
-    var rentalSaving = curRental - ourRental;
-    var netMonth     = mdrSaving + rentalSaving;
-    var netYear      = netMonth * 12;
-    var netFiveYear  = netMonth * 60;
-    var mdrDiff      = curMdr - ourMdr;
-    var rentalDiff   = curRental - ourRental;
-    var curTotalCost = (curMdr / 100 * vol) + curRental;
-    var ourTotalCost = (ourMdr / 100 * vol) + ourRental;
-    var result       = netMonth > 0 ? 'Green - Merchant Saves' : netMonth < 0 ? 'Red - Merchant Pays More' : 'No Difference';
-
-    var breakevenVol = 0;
-    var mdrDiffPct   = (curMdr - ourMdr) / 100;
-    if (netMonth < 0 && mdrDiffPct > 0) {
-      breakevenVol = (ourRental - curRental) / mdrDiffPct;
-    }
-
-    // Update UI
-    var mdrEl = document.getElementById('mdr-val');
-    mdrEl.textContent = sign(mdrSaving) + fmtINR(mdrSaving);
-    mdrEl.className = 'breakup-val ' + (mdrSaving > 0 ? 'pos' : mdrSaving < 0 ? 'neg' : 'neu');
-
-    var rentalEl = document.getElementById('rental-val');
-    rentalEl.textContent = sign(rentalSaving) + fmtINR(rentalSaving);
-    rentalEl.className = 'breakup-val ' + (rentalSaving > 0 ? 'pos' : rentalSaving < 0 ? 'neg' : 'neu');
-
-    var netTotalEl = document.getElementById('net-month-total');
-    netTotalEl.textContent = sign(netMonth) + fmtINR(netMonth);
-    netTotalEl.className = 'total-val ' + (netMonth > 0 ? 'pos' : netMonth < 0 ? 'neg' : 'neu');
-
-    var heroCard   = document.getElementById('hero-card');
-    heroCard.className = 'hero-card ' + (netMonth > 0 ? 'saving' : netMonth < 0 ? 'losing' : 'zero');
-
-    document.getElementById('verdict').textContent  = netMonth > 0 ? 'Merchant saves' : netMonth < 0 ? 'Merchant pays more' : 'No difference';
-    document.getElementById('yearly-amount').textContent   = fmtINR(netYear);
-    document.getElementById('fiveyear-amount').textContent = fmtINR(netFiveYear);
-    document.getElementById('monthly-amount').textContent  = fmtINR(netMonth);
-
-    var tipBox = document.getElementById('tip-box');
-    if (netMonth < 0 && mdrDiffPct > 0) {
-      document.getElementById('tip-amount').textContent = fmtINR(breakevenVol) + ' per month';
-      tipBox.style.display = 'block';
-    } else {
-      tipBox.style.display = 'none';
-    }
-
-    document.getElementById('results').style.display = 'block';
-    document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-    // Send to Google Sheet
-    var now = new Date();
-    var payload = {
-      date:         now.toLocaleDateString('en-IN'),
-      time:         now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
-      dayOfWeek:    DAYS[now.getDay()],
-      agentName:    agentName,
-      volume:       vol,
-      curMdr:       curMdr,
-      curRental:    curRental,
-      curTotalCost: Math.round(curTotalCost),
-      ourMdr:       ourMdr,
-      ourRental:    ourRental,
-      ourTotalCost: Math.round(ourTotalCost),
-      mdrDiff:      Math.round(mdrDiff * 100) / 100,
-      rentalDiff:   Math.round(rentalDiff),
-      mdrSaving:    Math.round(mdrSaving),
-      rentalSaving: Math.round(rentalSaving),
-      netMonth:     Math.round(netMonth),
-      netYear:      Math.round(netYear),
-      netFiveYear:  Math.round(netFiveYear),
-      result:       result,
-      breakevenVol: Math.round(breakevenVol)
-    };
-
-    fetch(SHEET_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    }).catch(function() {
-      // Silent fail — don't disturb agent
-    });
-  }
-
-  function reset() {
-    ['volume','cur-mdr','cur-rental','our-mdr','our-rental'].forEach(function(id) {
-      document.getElementById(id).value = '';
-    });
+  if (isNaN(vol)||isNaN(curMdr)||isNaN(curRental)||isNaN(ourMdr)||isNaN(ourRental)) {
+    document.getElementById('error-msg').style.display = 'block';
     document.getElementById('results').style.display = 'none';
-    document.getElementById('error-msg').style.display = 'none';
+    return;
+  }
+  document.getElementById('error-msg').style.display = 'none';
+
+  var mdrSaving    = (curMdr - ourMdr) / 100 * vol;
+  var rentalSaving = curRental - ourRental;
+  var netMonth     = mdrSaving + rentalSaving;
+  var netYear      = netMonth * 12;
+  var netFiveYear  = netMonth * 60;
+  var mdrDiffPct   = (curMdr - ourMdr) / 100;
+  var curTotalCost = (curMdr / 100 * vol) + curRental;
+  var ourTotalCost = (ourMdr / 100 * vol) + ourRental;
+  var result       = netMonth > 0 ? 'Green - Merchant Saves' : netMonth < 0 ? 'Red - Merchant Pays More' : 'No Difference';
+  var breakevenVol = (netMonth < 0 && mdrDiffPct > 0) ? (ourRental - curRental) / mdrDiffPct : 0;
+
+  // Store for PDF
+  lastCalc = { agentName, agentPhone, vol, curMdr, curRental, ourMdr, ourRental,
+    mdrSaving, rentalSaving, netMonth, netYear, netFiveYear, mdrDiffPct,
+    curTotalCost, ourTotalCost, result, breakevenVol };
+
+  // Update UI
+  var mdrEl = document.getElementById('mdr-val');
+  mdrEl.textContent = sign(mdrSaving) + fmtINRsym(mdrSaving);
+  mdrEl.className = 'breakup-val ' + (mdrSaving>0?'pos':mdrSaving<0?'neg':'neu');
+
+  var rentalEl = document.getElementById('rental-val');
+  rentalEl.textContent = sign(rentalSaving) + fmtINRsym(rentalSaving);
+  rentalEl.className = 'breakup-val ' + (rentalSaving>0?'pos':rentalSaving<0?'neg':'neu');
+
+  var netTotalEl = document.getElementById('net-month-total');
+  netTotalEl.textContent = sign(netMonth) + fmtINRsym(netMonth);
+  netTotalEl.className = 'total-val ' + (netMonth>0?'pos':netMonth<0?'neg':'neu');
+
+  document.getElementById('hero-card').className = 'hero-card ' + (netMonth>0?'saving':netMonth<0?'losing':'zero');
+  document.getElementById('verdict').textContent  = netMonth>0?'Merchant saves':netMonth<0?'Merchant pays more':'No difference';
+  document.getElementById('yearly-amount').textContent   = fmtINRsym(netYear);
+  document.getElementById('fiveyear-amount').textContent = fmtINRsym(netFiveYear);
+  document.getElementById('monthly-amount').textContent  = fmtINRsym(netMonth);
+
+  // Tip or PDF section
+  if (netMonth < 0 && mdrDiffPct > 0) {
+    document.getElementById('tip-amount').textContent = fmtINRsym(breakevenVol) + ' per month';
+    document.getElementById('tip-box').style.display = 'block';
+    document.getElementById('pdf-section').style.display = 'none';
+  } else if (netMonth > 0) {
     document.getElementById('tip-box').style.display = 'none';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    document.getElementById('pdf-section').style.display = 'block';
+  } else {
+    document.getElementById('tip-box').style.display = 'none';
+    document.getElementById('pdf-section').style.display = 'none';
   }
 
-  // Init on load
-  initAgent();
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // Log to sheet
+  var now = new Date();
+  var payload = {
+    date: now.toLocaleDateString('en-IN'), time: now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}),
+    dayOfWeek: DAYS[now.getDay()], agentName, agentPhone, volume: vol,
+    curMdr, curRental, curTotalCost: Math.round(curTotalCost),
+    ourMdr, ourRental, ourTotalCost: Math.round(ourTotalCost),
+    mdrDiff: Math.round((curMdr-ourMdr)*100)/100, rentalDiff: Math.round(curRental-ourRental),
+    mdrSaving: Math.round(mdrSaving), rentalSaving: Math.round(rentalSaving),
+    netMonth: Math.round(netMonth), netYear: Math.round(netYear), netFiveYear: Math.round(netFiveYear),
+    result, breakevenVol: Math.round(breakevenVol)
+  };
+  fetch(SHEET_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) }).catch(function(){});
+}
+
+// --- PDF ---
+function generatePDF() {
+  var c = lastCalc;
+  var merchantPhone = document.getElementById('merchant-phone').value.trim();
+  var { jsPDF } = window.jspdf;
+  var doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  var W = 210; var margin = 16; var col = W - margin * 2;
+
+  // Colors
+  var BLACK    = [26, 26, 26];
+  var GREEN    = [42, 106, 16];
+  var GREENBG  = [232, 245, 226];
+  var GREENBDR = [125, 195, 90];
+  var GRAY     = [120, 120, 120];
+  var LGRAY    = [240, 240, 238];
+  var WHITE    = [255, 255, 255];
+  var YELLOW   = [255, 248, 231];
+  var YELLOWBDR= [245, 200, 66];
+
+  var y = 0;
+
+  // Header bar
+  doc.setFillColor(...BLACK);
+  doc.rect(0, 0, W, 38, 'F');
+  doc.setTextColor(...WHITE);
+  doc.setFontSize(7); doc.setFont('helvetica','normal');
+  doc.text('EDC SAVINGS REPORT', margin, 12);
+  doc.setFontSize(18); doc.setFont('helvetica','bold');
+  doc.text('Your savings with our machine', margin, 24);
+  doc.setFontSize(8); doc.setFont('helvetica','normal');
+  doc.setTextColor(180,180,180);
+  var now = new Date();
+  doc.text('Prepared on ' + now.toLocaleDateString('en-IN', {day:'numeric',month:'long',year:'numeric'}), margin, 32);
+  y = 46;
+
+  // Agent info box
+  doc.setFillColor(...LGRAY);
+  doc.roundedRect(margin, y, col, 18, 3, 3, 'F');
+  doc.setTextColor(...GRAY); doc.setFontSize(7); doc.setFont('helvetica','normal');
+  doc.text('YOUR AGENT', margin+4, y+6);
+  doc.setTextColor(...BLACK); doc.setFontSize(10); doc.setFont('helvetica','bold');
+  doc.text(c.agentName, margin+4, y+12);
+  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...GRAY);
+  doc.text('Contact: ' + c.agentPhone, margin+4, y+17);
+  if (merchantPhone) {
+    doc.text('Merchant: ' + merchantPhone, margin + col/2, y+12);
+  }
+  y += 24;
+
+  // Big saving box
+  doc.setFillColor(...GREENBG);
+  doc.setDrawColor(...GREENBDR);
+  doc.setLineWidth(0.5);
+  doc.roundedRect(margin, y, col, 36, 4, 4, 'FD');
+  doc.setTextColor(...GREEN); doc.setFontSize(7); doc.setFont('helvetica','bold');
+  doc.text('YOU SAVE EVERY YEAR', margin+6, y+8);
+  doc.setFontSize(28); doc.setFont('helvetica','bold');
+  doc.text(fmtINR(c.netYear), margin+6, y+22);
+  // 5yr and monthly
+  doc.setFontSize(7); doc.setFont('helvetica','normal'); doc.setTextColor(...GREEN);
+  doc.text('OVER 5 YEARS', margin+6, y+30);
+  doc.setFontSize(12); doc.setFont('helvetica','bold');
+  doc.text(fmtINR(c.netFiveYear), margin+6, y+36);
+  doc.setFontSize(7); doc.setFont('helvetica','normal');
+  doc.text('PER MONTH', margin+col/2, y+30);
+  doc.setFontSize(11); doc.setFont('helvetica','bold');
+  doc.text(fmtINR(c.netMonth), margin+col/2, y+36);
+  y += 42;
+
+  // Comparison table
+  doc.setTextColor(...GRAY); doc.setFontSize(7); doc.setFont('helvetica','bold');
+  doc.text('MONTHLY COST COMPARISON', margin, y+5);
+  y += 8;
+  doc.autoTable({
+    startY: y,
+    margin: { left: margin, right: margin },
+    head: [['', 'Current Setup', 'Our Machine', 'Saving']],
+    body: [
+      ['MDR %', c.curMdr + '%', c.ourMdr + '%', (c.curMdr - c.ourMdr).toFixed(2) + '%'],
+      ['Monthly Rental', fmtINR(c.curRental), fmtINR(c.ourRental), fmtINR(c.curRental - c.ourRental)],
+      ['MDR Cost', fmtINR(c.curMdr/100*c.vol), fmtINR(c.ourMdr/100*c.vol), fmtINR(c.mdrSaving)],
+      ['Total Monthly Cost', fmtINR(c.curTotalCost), fmtINR(c.ourTotalCost), fmtINR(c.netMonth)],
+    ],
+    headStyles: { fillColor: BLACK, textColor: WHITE, fontSize: 8, fontStyle: 'bold' },
+    bodyStyles: { fontSize: 8, textColor: BLACK },
+    alternateRowStyles: { fillColor: [248, 248, 246] },
+    columnStyles: { 3: { textColor: GREEN, fontStyle: 'bold' } },
+    theme: 'grid',
+  });
+  y = doc.lastAutoTable.finalY + 8;
+
+  // Growth table
+  doc.setTextColor(...GRAY); doc.setFontSize(7); doc.setFont('helvetica','bold');
+  doc.text('YOUR SAVINGS AS YOUR BUSINESS GROWS', margin, y+5);
+  doc.setFontSize(6); doc.setFont('helvetica','normal');
+  doc.text('Based on your current MDR difference. The more you swipe, the more you save.', margin, y+10);
+  y += 13;
+
+  // Build growth rows starting from current volume upward
+  var baseVol = c.vol;
+  var growthVolumes = [];
+  var multipliers = [1, 1.5, 2, 3, 4, 5, 6, 7.5, 10];
+  multipliers.forEach(function(m) {
+    var v = Math.round(baseVol * m / 10000) * 10000;
+    if (v >= baseVol && growthVolumes.indexOf(v) === -1) growthVolumes.push(v);
+  });
+  // Ensure we have at most 8 rows, starting from current
+  growthVolumes = growthVolumes.slice(0, 8);
+
+  var growthRows = growthVolumes.map(function(v) {
+    var mS = c.mdrDiffPct * v;
+    var rS = c.curRental - c.ourRental;
+    var nm = mS + rS;
+    var ny = nm * 12;
+    var isCurrent = v === Math.round(baseVol / 10000) * 10000 || Math.abs(v - baseVol) < baseVol * 0.05;
+    return [
+      (isCurrent ? '>> ' : '') + fmtINR(v) + (isCurrent ? ' (Current)' : ''),
+      fmtINR(ny),
+      fmtINR(nm)
+    ];
+  });
+
+  doc.autoTable({
+    startY: y,
+    margin: { left: margin, right: margin },
+    head: [['Monthly Card Volume', 'Yearly Saving', 'Monthly Saving']],
+    body: growthRows,
+    headStyles: { fillColor: GREEN, textColor: WHITE, fontSize: 8, fontStyle: 'bold' },
+    bodyStyles: { fontSize: 8, textColor: BLACK },
+    alternateRowStyles: { fillColor: [248, 248, 246] },
+    didParseCell: function(data) {
+      if (data.section === 'body' && data.row.index === 0) {
+        data.cell.styles.fillColor = GREENBG;
+        data.cell.styles.fontStyle = 'bold';
+        data.cell.styles.textColor = GREEN;
+      }
+    },
+    theme: 'grid',
+  });
+  y = doc.lastAutoTable.finalY + 8;
+
+  // Footer note
+  doc.setFillColor(...YELLOW);
+  doc.setDrawColor(...YELLOWBDR);
+  doc.roundedRect(margin, y, col, 16, 3, 3, 'FD');
+  doc.setTextColor([90, 62, 0]); doc.setFontSize(8); doc.setFont('helvetica','bold');
+  doc.text('Want to switch? Contact your agent:', margin+4, y+7);
+  doc.setFont('helvetica','normal');
+  doc.text(c.agentName + '  |  ' + c.agentPhone, margin+4, y+13);
+
+  // Footer
+  doc.setTextColor(...GRAY); doc.setFontSize(7); doc.setFont('helvetica','normal');
+  doc.text('Savings calculated based on MDR and rental difference. Actual savings may vary.', margin, 290);
+
+  doc.save('EDC-Savings-Report.pdf');
+}
+
+function reset() {
+  ['volume','cur-mdr','cur-rental','our-mdr','our-rental','merchant-phone'].forEach(function(id){ document.getElementById(id).value=''; });
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('error-msg').style.display = 'none';
+  document.getElementById('tip-box').style.display = 'none';
+  document.getElementById('pdf-section').style.display = 'none';
+  lastCalc = {};
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+initAgent();
 </script>
 </body>
 </html>
