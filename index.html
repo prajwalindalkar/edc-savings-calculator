@@ -431,34 +431,61 @@ async function generateImage(c,level,lang){
 
 async function getImageExamples(cols,level,lang){
   var isHindi=(lang==='hindi');
-  var tone=level==='basic'?'everyday household items a small shopkeeper relates to (e.g. family meal out, grocery bill, mobile recharge, kids school supplies, electricity bill)':level==='standard'?'aspirational items for a growing merchant (e.g. new smartphone, family train trip, health insurance premium, kids tuition fees, home appliance)':'wealth-building items for a large successful merchant (e.g. gold coin, SIP investment, international trip, property down payment, child college fund)';
-  var langInstr=isHindi?'Write all text in Hindi using Devanagari script (हिंदी में लिखें). Use ₹ symbol for amounts.':'Write all text in English.';
+  var langInstr=isHindi?'Write all text in Hindi using Devanagari script only.':'Write all text in English only.';
 
-  // Build amounts string so API knows exact saving per column
-  var amtStr=cols.map(function(col,i){return'Column '+(i+1)+' monthly saving='+fmt(col.nm)+', yearly='+fmt(col.ny);}).join('; ');
+  // Level-specific example pools to ensure correct emojis and no repetition
+  var levelInstr;
+  if(level==='basic'){
+    levelInstr='Examples must be everyday household items. Use accurate emojis: 🍽️ for restaurant meal, 💡 for electricity, 🛒 for groceries, 🛵 for bike EMI, 📚 for school supplies, 💊 for medicine, 🎂 for celebration. Never use ✈️ for train. Never use ✦.';
+  } else if(level==='standard'){
+    levelInstr='Examples must be aspirational items. Use accurate emojis: 📱 for smartphone, 🚂 for train trip (NOT ✈️), 🏥 for health insurance, 🏠 for home upgrade, 💻 for laptop, 🛋️ for furniture. Never use ✈️ for train trips. Use ✦ if no emoji fits.';
+  } else {
+    levelInstr='Examples must be wealth-building items. Use accurate emojis: 🪙 for gold coin, 📈 for SIP/investment, 🎓 for college fund, 🏨 for resort trip, 🏠 for property, ✈️ ONLY for actual international flight. Use ✦ for investment/financial items.';
+  }
 
-  var prompt='Generate savings usage examples for a PhonePe EDC savings report. '+langInstr+'\n\nSavings amounts:\n'+amtStr+'\n\nLevel: '+level+'\nTone: '+tone+'\n\nRules:\n- Give exactly 2 examples per column (6 total)\n- Each example must match the saving amount realistically\n- ALL 6 examples must be DIFFERENT from each other, no repetition\n- Each example = one emoji + short text (max 6 words)\n\nReturn ONLY a JSON array of 6 objects in order [col1_item1, col1_item2, col2_item1, col2_item2, col3_item1, col3_item2]:\n[{"emoji":"🍽️","text":"example text"},...]';
+  var amtStr=cols.map(function(col,i){return'Column '+(i+1)+': monthly saving='+fmt(col.nm)+', yearly='+fmt(col.ny);}).join(' | ');
+
+  var prompt='Generate 6 savings usage examples for a PhonePe savings report image.\n'+langInstr+'\n'+levelInstr+'\n\nSavings: '+amtStr+'\n\nRules:\n1. Give exactly 2 examples per column (6 total, in column order)\n2. Each example must match its column saving amount realistically\n3. ALL 6 examples must be completely different topics\n4. Each: one accurate emoji + short text (max 6 words in '+(isHindi?'Hindi Devanagari':'English')+')\n\nReturn ONLY a JSON array:\n[{"emoji":"🍽️","text":"example"},{"emoji":"💡","text":"example"},{"emoji":"📱","text":"example"},{"emoji":"🚂","text":"example"},{"emoji":"🪙","text":"example"},{"emoji":"📈","text":"example"}]';
 
   try{
     var r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,messages:[{role:'user',content:prompt}]})});
     var d=await r.json();
+    if(d.error)throw new Error(d.error.message);
     var txt=d.content.filter(function(b){return b.type==='text'}).map(function(b){return b.text}).join('');
     var arr=JSON.parse(txt.replace(/```json|```/g,'').trim());
     if(arr.length>=6)return arr;
-    throw new Error('not enough');
+    throw new Error('not enough items');
   }catch(e){
-    // Hardcoded fallback — guaranteed unique, no repetition
-    if(isHindi){
-      return[
+    // Hardcoded fallback — all different, correct emojis, correct language
+    if(level==='basic'){
+      return isHindi?[
         {emoji:'🍽️',text:'परिवार के साथ बाहर खाना'},{emoji:'💡',text:'बिजली का बिल भरें'},
-        {emoji:'📱',text:'नया स्मार्टफोन खरीदें'},{emoji:'🏥',text:'स्वास्थ्य बीमा प्रीमियम'},
-        {emoji:'🪙',text:'सोने का सिक्का खरीदें'},{emoji:'📈',text:'SIP में निवेश करें'}
+        {emoji:'🛒',text:'महीने की किराना खरीदारी'},{emoji:'🛵',text:'बाइक की EMI भरें'},
+        {emoji:'📚',text:'बच्चों की किताबें खरीदें'},{emoji:'💊',text:'दवाई और स्वास्थ्य खर्च'}
+      ]:[
+        {emoji:'🍽️',text:'Family dinner every month'},{emoji:'💡',text:'Full electricity bill paid'},
+        {emoji:'🛒',text:'Monthly grocery run covered'},{emoji:'🛵',text:'One bike EMI paid off'},
+        {emoji:'📚',text:"Kids' school supplies bought"},{emoji:'💊',text:'Monthly medicine costs covered'}
+      ];
+    } else if(level==='standard'){
+      return isHindi?[
+        {emoji:'📱',text:'नया स्मार्टफोन हर साल'},{emoji:'🚂',text:'परिवार की ट्रेन यात्रा'},
+        {emoji:'🏥',text:'स्वास्थ्य बीमा प्रीमियम'},{emoji:'🏠',text:'घर की मरम्मत करवाएं'},
+        {emoji:'💻',text:'लैपटॉप या टैबलेट खरीदें'},{emoji:'🛋️',text:'नया फर्नीचर घर के लिए'}
+      ]:[
+        {emoji:'📱',text:'New smartphone every year'},{emoji:'🚂',text:'Family train trip covered'},
+        {emoji:'🏥',text:'Health insurance premium paid'},{emoji:'🏠',text:'Home repair and upgrades'},
+        {emoji:'💻',text:'New laptop for the family'},{emoji:'🛋️',text:'New furniture for your shop'}
       ];
     } else {
-      return[
-        {emoji:'🍽️',text:'Family dinner every month'},{emoji:'💡',text:'Electricity bill covered'},
-        {emoji:'📱',text:'New smartphone this year'},{emoji:'✈️',text:'Family trip by train'},
-        {emoji:'🪙',text:'Buy a gold coin'},{emoji:'📈',text:'Start a SIP investment'}
+      return isHindi?[
+        {emoji:'🪙',text:'1 ग्राम सोने का सिक्का'},{emoji:'📈',text:'SIP में निवेश करें'},
+        {emoji:'🎓',text:'बच्चे की पढ़ाई का फंड'},{emoji:'🏨',text:'5 दिन का रिसॉर्ट ट्रिप'},
+        {emoji:'🏠',text:'घर के डाउन पेमेंट का हिस्सा'},{emoji:'✦',text:'म्यूचुअल फंड में लगाएं'}
+      ]:[
+        {emoji:'🪙',text:'Buy a pure gold coin'},{emoji:'📈',text:'Start a SIP investment'},
+        {emoji:'🎓',text:"Child's college education fund"},{emoji:'🏨',text:'5-day family resort stay'},
+        {emoji:'🏠',text:'Property down payment fund'},{emoji:'✦',text:'Mutual fund portfolio addition'}
       ];
     }
   }
@@ -638,12 +665,22 @@ async function generateMessage(c,level,lang,script){
 }
 
 async function buildMessage(c,level,lang,script){
-  var langNames={hindi:'Hindi',marathi:'Marathi',gujarati:'Gujarati',tamil:'Tamil',telugu:'Telugu',kannada:'Kannada',bengali:'Bengali',punjabi:'Punjabi',urdu:'Urdu in Roman script',odia:'Odia in Roman script',assamese:'Assamese in Roman script',malayalam:'Malayalam',english:'English'};
+  var langNames={hindi:'Hindi',marathi:'Marathi',gujarati:'Gujarati',tamil:'Tamil',telugu:'Telugu',kannada:'Kannada',bengali:'Bengali',punjabi:'Punjabi',urdu:'Urdu',odia:'Odia',assamese:'Assamese',malayalam:'Malayalam',english:'English'};
   var langName=langNames[lang]||lang;
-  var scriptNote=script==='native'?'Use native script of '+langName+'.':'Use Roman letters / transliteration.';
+  var isNative=script==='native';
+  var scriptNote=isNative?'Write in the native script of '+langName+' (e.g. Devanagari for Hindi, Tamil script for Tamil, etc).':'Write in Roman letters using '+langName+' words (Hinglish/transliteration style).';
   var curMdrCost=c.curMdr/100*c.vol,ourMdrCost=c.ourMdr/100*c.vol,curTotal=curMdrCost+c.curRental,ourTotal=ourMdrCost+c.ourRental;
   var count=level==='basic'?3:level==='standard'?4:5;
-  var tone=level==='basic'?'warm, simple, everyday comparisons for a small shopkeeper. Use emojis.':level==='standard'?'aspirational, forward-looking for a growing merchant. Use ✦ symbols.':'wealth-building, exclusive for a large merchant. Use ✦ symbols only.';
+
+  // Level-specific tone and style
+  var levelGuide;
+  if(level==='basic'){
+    levelGuide='TONE: Warm, friendly, very simple words. Write like talking to a neighbourhood shopkeeper. Use emojis heavily (💰🎉✅🛵🍽️💡). Comparisons should be everyday household things (family meal, electricity bill, school fees, grocery run, mobile recharge). Keep sentences short.';
+  } else if(level==='standard'){
+    levelGuide='TONE: Confident, aspirational, slightly formal. Write like a business advisor. Use ✦ symbols instead of basic emojis. Comparisons should be aspirational (new smartphone, family train trip 🚂 not ✈️, health insurance, home appliance, one month staff salary). Show the merchant they are growing.';
+  } else {
+    levelGuide='TONE: Professional, exclusive, premium. Write like a private banker. Use ✦ symbols only, no casual emojis. Comparisons should be wealth-building (gold coin 🪙, SIP mutual fund investment 📈, child college fund 🎓, property down payment 🏠, 4-5 day resort trip 🏨). Make the merchant feel elite.';
+  }
 
   // Growth rows
   var gRows=[];var seen={};
@@ -653,16 +690,22 @@ async function buildMessage(c,level,lang,script){
     var nm=(c.mdrDiffPct*v)+(c.curRental-c.ourRental);
     if(nm>0&&gRows.length<4)gRows.push({v:v,ny:nm*12});
   });
-  var growthStr=gRows.map(function(g){return'  '+fmtL(g.v)+' \u2192 '+fmt(g.ny)+'/year'}).join('\n');
+  var growthStr=gRows.map(function(g){return fmtL(g.v)+' \u2192 '+fmt(g.ny)+'/year'}).join('\n');
 
-  var prompt='Write a WhatsApp savings message in '+langName+'. '+scriptNote+'\n\nData:\n- Monthly saving: '+fmt(c.netMonth)+'\n- Yearly saving: '+fmt(c.netYear)+'\n- 5yr saving: '+fmt(c.netFiveYear)+'\n- Current cost: '+fmt(curTotal)+'/month\n- Our cost: '+fmt(ourTotal)+'/month\n- Current MDR: '+c.curMdr+'%\n- Our MDR: '+c.ourMdr+'%\n- Current rental: '+fmt(c.curRental)+'\n- Our rental: '+fmt(c.ourRental)+'\n\nGrowth table (include this, keep formatting):\n'+growthStr+'\n\nAgent: '+c.agentName+', '+c.agentPhone+'\nLevel: '+level+'\nTone: '+tone+'\nComparisons: '+count+' unique ones that match the saving amount realistically.\n\nFormat: greeting, volume, current cost vs our cost, savings (monthly/yearly/5yr), comparisons, growth table, agent contact.\nReturn ONLY the message text, no explanation.';
+  // CRITICAL: language instruction is the FIRST thing in the system prompt
+  var systemPrompt='YOU MUST WRITE ENTIRELY IN '+langName.toUpperCase()+'. EVERY SINGLE WORD must be in '+langName+'. '+scriptNote+' DO NOT use any other language. This is non-negotiable.';
+
+  var userPrompt=levelGuide+'\n\nSavings numbers:\n- Monthly: '+fmt(c.netMonth)+'\n- Yearly: '+fmt(c.netYear)+'\n- 5 years: '+fmt(c.netFiveYear)+'\n- Their current cost: '+fmt(curTotal)+'/month\n- Our cost: '+fmt(ourTotal)+'/month\n- MDR: '+c.curMdr+'% → '+c.ourMdr+'%\n- Rental: '+fmt(c.curRental)+' → '+fmt(c.ourRental)+'\n\nGrowth table to include:\n'+growthStr+'\n\nAgent name: '+c.agentName+'\nAgent phone: '+c.agentPhone+'\n\nWrite '+count+' unique comparisons matching the saving amount realistically. IMPORTANT: use 🚂 for train trips, never ✈️ unless it is actually a flight. All comparisons must be different.\n\nMessage structure: greeting → their current cost vs our cost → monthly/yearly/5yr savings in bold (*text*) → comparisons → growth table → agent contact.\nReturn ONLY the message. No explanation.';
 
   try{
-    var r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:700,messages:[{role:'user',content:prompt}]})});
+    var r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,system:systemPrompt,messages:[{role:'user',content:userPrompt}]})});
     var d=await r.json();
+    if(d.error){throw new Error(d.error.message);}
     return d.content.filter(function(b){return b.type==='text'}).map(function(b){return b.text}).join('').trim();
   }catch(e){
-    return'Namaste \uD83D\uDC4B\n\nAapke liye bachat report taiyar ki hai.\n\n\uD83D\uDCB0 Har maheene: '+fmt(c.netMonth)+'\n\u2705 Har saal: '+fmt(c.netYear)+'\n\uD83D\uDCC8 5 saalon mein: '+fmt(c.netFiveYear)+'\n\n\uD83D\uDCDE '+c.agentName+' — '+c.agentPhone;
+    // Fallback hardcoded in selected language basics
+    var greet={hindi:'Namaste \uD83D\uDC4B',marathi:'Namaskar \uD83D\uDC4B',gujarati:'Namaskar \uD83D\uDC4B',tamil:'Vanakkam \uD83D\uDC4B',telugu:'Namaskaram \uD83D\uDC4B',kannada:'Namaskara \uD83D\uDC4B',bengali:'Namaskar \uD83D\uDC4B',punjabi:'Sat Sri Akal \uD83D\uDC4B',urdu:'Assalam Alaikum \uD83D\uDC4B',odia:'Namaskar \uD83D\uDC4B',assamese:'Namaskar \uD83D\uDC4B',malayalam:'Namaskaaram \uD83D\uDC4B',english:'Hello \uD83D\uDC4B'}[lang]||'Hello \uD83D\uDC4B';
+    return greet+'\n\nYour savings report is ready.\n\n\uD83D\uDCB0 Monthly: *'+fmt(c.netMonth)+'*\n\u2705 Yearly: *'+fmt(c.netYear)+'*\n\uD83D\uDCC8 5 Years: *'+fmt(c.netFiveYear)+'*\n\n\uD83D\uDCDE Contact: *'+c.agentName+'* — '+c.agentPhone;
   }
 }
 
