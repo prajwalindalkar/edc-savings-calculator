@@ -4,481 +4,707 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>EDC Savings Calculator</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --green-bg: #E8F5E2; --green-border: #7DC35A; --green-text: #2A6A10; --green-sub: #3D8C1E;
-    --red-bg: #FDECEA; --red-border: #E88080; --red-text: #8C1A1A; --red-sub: #B02020;
-    --ink: #1A1A1A; --ink-2: #555; --ink-3: #888; --surface: #F5F4F0; --card: #FFFFFF; --border: #E2E0D8;
-  }
-  body { font-family: 'DM Sans', sans-serif; background: var(--surface); color: var(--ink); min-height: 100vh; padding: 0 0 2.5rem; }
-  .header { background: var(--ink); color: #fff; padding: 1.5rem 1.25rem 1.25rem; margin-bottom: 1.25rem; }
-  .header-label { font-size: 10px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: #999; margin-bottom: 6px; }
-  .header h1 { font-size: 22px; font-weight: 600; line-height: 1.2; margin-bottom: 4px; }
-  .header p { font-size: 13px; color: #aaa; }
-  .body { padding: 0 1rem; }
-  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 1.1rem 1.25rem; margin-bottom: 12px; }
-  .sec-label { font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
-  .sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-  .field { margin-bottom: 12px; }
-  .field:last-child { margin-bottom: 0; }
-  .field label { display: block; font-size: 12px; color: var(--ink-2); margin-bottom: 5px; font-weight: 500; }
-  .input-wrap { position: relative; }
-  .input-prefix { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); font-size: 14px; color: var(--ink-3); pointer-events: none; }
-  .input-suffix { position: absolute; right: 11px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--ink-3); pointer-events: none; }
-  input[type="number"], input[type="text"], input[type="tel"] {
-    width: 100%; padding: 10px 36px 10px 28px; font-size: 15px; font-family: 'DM Mono', monospace; font-weight: 500;
-    border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--ink);
-    appearance: none; -moz-appearance: textfield; transition: border-color .15s;
-  }
-  input[type="text"], input[type="tel"] { font-family: 'DM Sans', sans-serif; padding: 10px 14px; }
-  input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
-  input:focus { outline: none; border-color: var(--ink); background: #fff; }
-  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
-  /* Agent card */
-  .agent-card { background: var(--ink); border-radius: 14px; padding: 1rem 1.25rem; margin-bottom: 12px; }
-  .agent-label { font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: #888; margin-bottom: 10px; }
-  .agent-field { margin-bottom: 10px; }
-  .agent-field:last-child { margin-bottom: 0; }
-  .agent-field label { display: block; font-size: 11px; color: #888; margin-bottom: 4px; font-weight: 500; }
-  .agent-input-wrap { position: relative; }
-  .agent-input-wrap input { width: 100%; padding: 9px 80px 9px 14px; font-size: 15px; font-family: 'DM Sans', sans-serif; font-weight: 500; border: 1px solid #444; border-radius: 10px; background: #2A2A2A; color: #fff; }
-  .agent-input-wrap input::placeholder { color: #666; }
-  .agent-input-wrap input:focus { outline: none; border-color: #777; background: #333; }
-  .agent-save-btn { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 11px; font-weight: 600; color: #aaa; background: #3A3A3A; border: none; border-radius: 6px; padding: 4px 10px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
-  .agent-saved-row { display: flex; align-items: center; justify-content: space-between; }
-  .agent-saved-name { font-size: 15px; font-weight: 600; color: #fff; }
-  .agent-saved-sub { font-size: 11px; color: #888; margin-top: 2px; }
-  .agent-edit-btn { font-size: 11px; font-weight: 600; color: #aaa; background: #2A2A2A; border: 1px solid #444; border-radius: 8px; padding: 5px 12px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
-
-  .calc-btn { width: 100%; padding: 15px; font-size: 15px; font-weight: 600; font-family: 'DM Sans', sans-serif; background: var(--ink); color: #fff; border: none; border-radius: 14px; cursor: pointer; margin-bottom: 14px; transition: opacity .15s, transform .1s; }
-  .calc-btn:active { opacity: .85; transform: scale(.98); }
-  .results { display: none; }
-
-  .hero-card { border-radius: 14px; padding: 1.5rem 1.25rem 1.25rem; margin-bottom: 12px; border: 1px solid; }
-  .hero-card.saving { background: var(--green-bg); border-color: var(--green-border); }
-  .hero-card.losing { background: var(--red-bg); border-color: var(--red-border); }
-  .hero-card.zero { background: #F5F4F0; border-color: var(--border); }
-  .verdict { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 8px; }
-  .saving .verdict { color: var(--green-sub); } .losing .verdict { color: var(--red-sub); } .zero .verdict { color: var(--ink-2); }
-  .yearly-amount { font-size: 52px; font-weight: 600; font-family: 'DM Mono', monospace; line-height: 1; margin-bottom: 2px; letter-spacing: -.02em; }
-  .saving .yearly-amount { color: var(--green-text); } .losing .yearly-amount { color: var(--red-text); } .zero .yearly-amount { color: var(--ink); }
-  .yearly-period { font-size: 13px; font-weight: 500; margin-bottom: 18px; }
-  .saving .yearly-period { color: var(--green-sub); } .losing .yearly-period { color: var(--red-sub); } .zero .yearly-period { color: var(--ink-2); }
-  .hero-divider { height: 1px; margin: 0 0 16px; opacity: .4; }
-  .saving .hero-divider { background: var(--green-border); } .losing .hero-divider { background: var(--red-border); } .zero .hero-divider { background: var(--border); opacity:1; }
-  .sub-row { display: flex; justify-content: space-between; align-items: flex-end; }
-  .sub-label { font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 3px; }
-  .saving .sub-label { color: var(--green-sub); } .losing .sub-label { color: var(--red-sub); } .zero .sub-label { color: var(--ink-3); }
-  .fiveyear-amount { font-size: 24px; font-weight: 600; font-family: 'DM Mono', monospace; line-height: 1; }
-  .saving .fiveyear-amount { color: var(--green-text); } .losing .fiveyear-amount { color: var(--red-text); } .zero .fiveyear-amount { color: var(--ink); }
-  .monthly-block { text-align: right; }
-  .monthly-amount { font-size: 15px; font-weight: 500; font-family: 'DM Mono', monospace; line-height: 1; }
-  .saving .monthly-amount { color: var(--green-sub); } .losing .monthly-amount { color: var(--red-sub); } .zero .monthly-amount { color: var(--ink-2); }
-
-  .breakup-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--border); }
-  .breakup-row:last-child { border-bottom: none; }
-  .breakup-label { font-size: 13px; color: var(--ink-2); }
-  .breakup-val { font-size: 14px; font-weight: 500; font-family: 'DM Mono', monospace; }
-  .breakup-val.pos { color: var(--green-text); } .breakup-val.neg { color: var(--red-text); } .breakup-val.neu { color: var(--ink-3); }
-  .total-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0 0; margin-top: 4px; border-top: 1.5px solid var(--ink); }
-  .total-label { font-size: 14px; font-weight: 600; color: var(--ink); }
-  .total-val { font-size: 16px; font-weight: 600; font-family: 'DM Mono', monospace; }
-  .total-val.pos { color: var(--green-text); } .total-val.neg { color: var(--red-text); } .total-val.neu { color: var(--ink-2); }
-
-  .tip-box { display: none; background: #FFF8E7; border: 1px solid #F5C842; border-radius: 14px; padding: 1rem 1.25rem; margin-bottom: 12px; }
-  .tip-box-label { font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: #9A6F00; margin-bottom: 6px; }
-  .tip-box-text { font-size: 14px; color: #5A3E00; line-height: 1.5; }
-  .tip-box-amount { font-size: 22px; font-weight: 600; font-family: 'DM Mono', monospace; color: #7A5000; margin: 6px 0 4px; }
-  .tip-box-sub { font-size: 12px; color: #9A7020; }
-
-  /* Copy message section */
-  .copy-section { display: none; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 1.1rem 1.25rem; margin-bottom: 12px; }
-  .msg-preview { background: #ECF8E8; border: 1px solid #B8DFA8; border-radius: 10px; padding: 12px 14px; font-size: 13px; line-height: 1.7; color: #1A1A1A; white-space: pre-wrap; word-break: break-word; margin-bottom: 12px; font-family: 'DM Sans', sans-serif; }
-  .copy-btn { width: 100%; padding: 14px; font-size: 15px; font-weight: 600; font-family: 'DM Sans', sans-serif; background: #25D366; color: #fff; border: none; border-radius: 14px; cursor: pointer; transition: opacity .15s; display: flex; align-items: center; justify-content: center; gap: 8px; }
-  .copy-btn:active { opacity: .85; }
-  .copy-btn.copied { background: #2A6A10; }
-  .copy-hint { font-size: 11px; color: var(--ink-3); text-align: center; margin-top: 8px; }
-
-  .reset-btn { width: 100%; padding: 12px; font-size: 14px; font-family: 'DM Sans', sans-serif; color: var(--ink-2); background: transparent; border: 1px solid var(--border); border-radius: 14px; cursor: pointer; margin-top: 4px; }
-  .reset-btn:active { background: var(--border); }
-  .error-msg { display: none; background: #FFF3CD; border: 1px solid #FFCA28; border-radius: 10px; padding: 10px 14px; font-size: 13px; color: #7A5400; margin-bottom: 12px; }
-  .agent-error { display: none; background: #FDECEA; border: 1px solid #E88080; border-radius: 10px; padding: 8px 14px; font-size: 12px; color: #8C1A1A; margin-top: 8px; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--pp:#7C3AED;--pp-light:#A78BFA;--ink:#0F0A1E;--ink-2:#6B7280;--surface:#F8F7FF;--card:#fff;--border:#E5E3F0}
+body{font-family:'Sora',sans-serif;background:var(--surface);color:var(--ink);min-height:100vh;padding:0 0 3rem}
+.header{background:linear-gradient(135deg,#1E0A3C 0%,#2D1B69 60%,#1E0A3C 100%);padding:1.5rem 1.25rem 1.25rem;margin-bottom:1.25rem;position:relative;overflow:hidden}
+.header::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 80% 50%,rgba(124,58,237,.3) 0%,transparent 70%);pointer-events:none}
+.header-eyebrow{font-size:9px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--pp-light);margin-bottom:8px;opacity:.8}
+.header h1{font-size:24px;font-weight:800;color:#fff;line-height:1.15;margin-bottom:4px}
+.header h1 span{color:var(--pp-light)}
+.header p{font-size:12px;color:rgba(255,255,255,.5)}
+.body{padding:0 1rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.1rem 1.25rem;margin-bottom:12px}
+.sec-label{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.sec-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.field{margin-bottom:12px}.field:last-child{margin-bottom:0}
+.field label{display:block;font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:5px}
+.input-wrap{position:relative}
+.input-prefix,.input-suffix{position:absolute;top:50%;transform:translateY(-50%);font-size:13px;color:var(--ink-2);pointer-events:none;font-family:'DM Mono',monospace}
+.input-prefix{left:11px}.input-suffix{right:11px}
+input[type="number"],input[type="text"],input[type="tel"]{width:100%;padding:10px 36px 10px 28px;font-size:15px;font-family:'DM Mono',monospace;font-weight:500;border:1.5px solid var(--border);border-radius:10px;background:#FAFAFA;color:var(--ink);appearance:none;-moz-appearance:textfield;transition:border-color .2s}
+input[type="text"],input[type="tel"]{font-family:'Sora',sans-serif;padding:10px 14px}
+input[type="number"]::-webkit-inner-spin-button,input[type="number"]::-webkit-outer-spin-button{-webkit-appearance:none}
+input:focus{outline:none;border-color:var(--pp);background:#fff}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+select{width:100%;padding:10px 14px;font-size:13px;font-family:'Sora',sans-serif;border:1.5px solid var(--border);border-radius:10px;background:#FAFAFA;color:var(--ink);appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%237C3AED' d='M6 8L0 0h12z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+select:focus{outline:none;border-color:var(--pp)}
+.agent-card{background:linear-gradient(135deg,#1E0A3C,#2D1B69);border-radius:16px;padding:1rem 1.25rem;margin-bottom:12px;border:1px solid rgba(124,58,237,.3)}
+.agent-top-label{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--pp-light);margin-bottom:12px;opacity:.8}
+.agent-field{margin-bottom:10px}.agent-field:last-child{margin-bottom:0}
+.agent-field label{display:block;font-size:10px;font-weight:600;color:rgba(255,255,255,.5);margin-bottom:4px}
+.agent-field select{background-color:#2D1B69;color:#fff;border-color:rgba(124,58,237,.4);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23A78BFA' d='M6 8L0 0h12z'/%3E%3C/svg%3E")}
+.agent-input-wrap{position:relative}
+.agent-input-wrap input{width:100%;padding:9px 80px 9px 14px;font-size:15px;font-family:'Sora',sans-serif;font-weight:600;border:1.5px solid rgba(124,58,237,.4);border-radius:10px;background:rgba(255,255,255,.07);color:#fff}
+.agent-input-wrap input::placeholder{color:rgba(255,255,255,.3)}
+.agent-input-wrap input:focus{outline:none;border-color:var(--pp-light)}
+.agent-save-btn{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#fff;background:var(--pp);border:none;border-radius:6px;padding:5px 11px;cursor:pointer;font-family:'Sora',sans-serif}
+.agent-saved-row{display:flex;align-items:center;justify-content:space-between}
+.agent-saved-name{font-size:16px;font-weight:700;color:#fff}
+.agent-saved-sub{font-size:10px;color:rgba(255,255,255,.5);margin-top:2px}
+.agent-edit-btn{font-size:10px;font-weight:600;color:var(--pp-light);background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);border-radius:8px;padding:5px 12px;cursor:pointer;font-family:'Sora',sans-serif}
+.agent-error{display:none;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);border-radius:8px;padding:8px 12px;font-size:11px;color:#FCA5A5;margin-top:8px}
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.btn-calc{padding:14px 8px;font-size:12px;font-weight:700;font-family:'Sora',sans-serif;background:#1E0A3C;color:#fff;border:1.5px solid rgba(124,58,237,.4);border-radius:14px;cursor:pointer;line-height:1.3;transition:all .2s}
+.btn-report{padding:14px 8px;font-size:12px;font-weight:700;font-family:'Sora',sans-serif;background:linear-gradient(135deg,var(--pp),#9333EA);color:#fff;border:none;border-radius:14px;cursor:pointer;line-height:1.3;transition:all .2s;box-shadow:0 4px 15px rgba(124,58,237,.3)}
+.btn-calc:active,.btn-report:active{transform:scale(.97);opacity:.9}
+.results{display:none}
+.hero-card{border-radius:16px;padding:1.5rem 1.25rem 1.25rem;margin-bottom:12px;border:1.5px solid}
+.hero-card.saving{background:linear-gradient(135deg,#ECFDF5,#F0FDF4);border-color:#86EFAC}
+.hero-card.losing{background:#FEF2F2;border-color:#FCA5A5}
+.hero-card.zero{background:#F8F7FF;border-color:var(--border)}
+.verdict{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px}
+.saving .verdict{color:#16A34A}.losing .verdict{color:#DC2626}.zero .verdict{color:var(--ink-2)}
+.yearly-amount{font-size:52px;font-weight:800;line-height:1;margin-bottom:2px;letter-spacing:-.03em;font-family:'DM Mono',monospace}
+.saving .yearly-amount{color:#15803D}.losing .yearly-amount{color:#DC2626}.zero .yearly-amount{color:var(--ink)}
+.yearly-period{font-size:12px;font-weight:600;margin-bottom:18px}
+.saving .yearly-period{color:#16A34A}.losing .yearly-period{color:#DC2626}.zero .yearly-period{color:var(--ink-2)}
+.hero-divider{height:1px;margin:0 0 16px;opacity:.3}
+.saving .hero-divider{background:#16A34A}.losing .hero-divider{background:#DC2626}.zero .hero-divider{background:var(--border);opacity:1}
+.sub-row{display:flex;justify-content:space-between;align-items:flex-end}
+.sub-label{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px}
+.saving .sub-label{color:#16A34A}.losing .sub-label{color:#DC2626}.zero .sub-label{color:var(--ink-2)}
+.fiveyear-amount{font-size:22px;font-weight:700;font-family:'DM Mono',monospace}
+.saving .fiveyear-amount{color:#15803D}.losing .fiveyear-amount{color:#DC2626}.zero .fiveyear-amount{color:var(--ink)}
+.monthly-block{text-align:right}
+.monthly-amount{font-size:15px;font-weight:600;font-family:'DM Mono',monospace}
+.saving .monthly-amount{color:#16A34A}.losing .monthly-amount{color:#DC2626}.zero .monthly-amount{color:var(--ink-2)}
+.breakup-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)}
+.breakup-row:last-child{border-bottom:none}
+.breakup-label{font-size:13px;color:var(--ink-2)}
+.breakup-val{font-size:13px;font-weight:600;font-family:'DM Mono',monospace}
+.breakup-val.pos{color:#16A34A}.breakup-val.neg{color:#DC2626}.breakup-val.neu{color:var(--ink-2)}
+.total-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0 0;margin-top:4px;border-top:2px solid var(--ink)}
+.total-label{font-size:13px;font-weight:700;color:var(--ink)}
+.total-val{font-size:16px;font-weight:700;font-family:'DM Mono',monospace}
+.total-val.pos{color:#15803D}.total-val.neg{color:#DC2626}.total-val.neu{color:var(--ink-2)}
+.tip-box{display:none;background:linear-gradient(135deg,#FFFBEB,#FFF7ED);border:1.5px solid #FCD34D;border-radius:16px;padding:1rem 1.25rem;margin-bottom:12px}
+.tip-label{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#92400E;margin-bottom:6px}
+.tip-text{font-size:13px;color:#78350F;line-height:1.5}
+.tip-amount{font-size:22px;font-weight:700;font-family:'DM Mono',monospace;color:#B45309;margin:6px 0 4px}
+.tip-sub{font-size:11px;color:#92400E}
+.img-section{display:none;margin-bottom:12px}
+.msg-section{display:none;margin-bottom:12px}
+.generating-msg{text-align:center;padding:2.5rem;color:var(--ink-2);font-size:13px}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--pp);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.gen-steps{font-size:11px;color:var(--pp);margin-top:6px}
+.generated-img{width:100%;border-radius:14px;display:block;box-shadow:0 12px 40px rgba(0,0,0,.2)}
+.img-hint{font-size:11px;color:var(--ink-2);text-align:center;margin-top:10px;line-height:1.6;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 14px}
+.msg-preview{background:#ECF8E8;border:1px solid #B8DFA8;border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.7;color:#1A1A1A;white-space:pre-wrap;word-break:break-word;margin-bottom:12px;font-family:'Sora',sans-serif;max-height:320px;overflow-y:auto}
+.copy-btn{width:100%;padding:14px;font-size:15px;font-weight:600;font-family:'Sora',sans-serif;background:#25D366;color:#fff;border:none;border-radius:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.copy-btn.copied{background:#2A6A10}
+.copy-hint{font-size:11px;color:var(--ink-2);text-align:center;margin-top:8px}
+.reset-btn{width:100%;padding:12px;font-size:13px;font-family:'Sora',sans-serif;font-weight:600;color:var(--ink-2);background:transparent;border:1.5px solid var(--border);border-radius:14px;cursor:pointer;margin-top:4px}
+.error-msg{display:none;background:#FFFBEB;border:1.5px solid #FCD34D;border-radius:10px;padding:10px 14px;font-size:12px;color:#92400E;margin-bottom:12px}
+/* POPUP */
+.overlay{display:none;position:fixed;inset:0;background:rgba(15,10,30,.75);z-index:100;align-items:flex-end;justify-content:center;backdrop-filter:blur(6px)}
+.overlay.active{display:flex}
+.popup{background:#fff;border-radius:24px 24px 0 0;padding:1.5rem 1.25rem 2.5rem;width:100%;max-width:480px}
+.popup-title{font-size:17px;font-weight:800;color:var(--ink);margin-bottom:3px}
+.popup-sub{font-size:12px;color:var(--ink-2);margin-bottom:18px}
+.type-btn{width:100%;padding:16px;border:2px solid var(--border);border-radius:14px;background:#fff;margin-bottom:12px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:14px;transition:all .15s}
+.type-btn:active{transform:scale(.98)}
+.type-btn.img-btn{border-color:#A78BFA;background:linear-gradient(135deg,#F5F3FF,#EDE9FE)}
+.type-btn.msg-btn{border-color:#25D366;background:linear-gradient(135deg,#F0FFF4,#DCFCE7)}
+.type-icon{font-size:28px}
+.type-info-title{font-size:14px;font-weight:700;color:var(--ink)}
+.type-info-sub{font-size:11px;color:var(--ink-2);margin-top:2px}
+.popup-select{width:100%;padding:11px 14px;font-size:14px;font-family:'Sora',sans-serif;border:1.5px solid var(--border);border-radius:12px;background:#FAFAFA;color:var(--ink);appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%237C3AED' d='M6 8L0 0h12z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;margin-bottom:14px}
+.popup-field-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);margin-bottom:8px}
+.level-btn{width:100%;padding:13px 16px;border:2px solid var(--border);border-radius:12px;background:#fff;margin-bottom:10px;cursor:pointer;text-align:left;transition:all .15s}
+.level-btn:last-of-type{margin-bottom:0}
+.level-btn:active{transform:scale(.98)}
+.level-btn-top{display:flex;align-items:center;gap:10px;margin-bottom:3px}
+.level-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.level-btn-title{font-size:14px;font-weight:700}
+.level-btn-sub{font-size:11px;color:var(--ink-2);padding-left:20px}
+.level-btn.basic{border-color:#A78BFA;background:linear-gradient(135deg,#F5F3FF,#EDE9FE)}
+.level-btn.basic .level-dot{background:var(--pp)}.level-btn.basic .level-btn-title{color:#4C1D95}
+.level-btn.standard{border-color:#F59E0B;background:linear-gradient(135deg,#FFFBEB,#FEF3C7)}
+.level-btn.standard .level-dot{background:#F59E0B}.level-btn.standard .level-btn-title{color:#92400E}
+.level-btn.premium{border-color:#374151;background:linear-gradient(135deg,#111827,#1F2937)}
+.level-btn.premium .level-dot{background:#FCD34D}.level-btn.premium .level-btn-title{color:#FCD34D}.level-btn.premium .level-btn-sub{color:rgba(255,255,255,.5)}
+.next-btn{width:100%;padding:13px;font-size:14px;font-weight:700;font-family:'Sora',sans-serif;background:linear-gradient(135deg,var(--pp),#9333EA);color:#fff;border:none;border-radius:12px;cursor:pointer;margin-bottom:0}
+.back-btn{width:100%;padding:12px;font-size:13px;font-family:'Sora',sans-serif;color:var(--ink-2);background:transparent;border:1.5px solid var(--border);border-radius:12px;cursor:pointer;margin-top:10px}
 </style>
 </head>
 <body>
-
 <div class="header">
-  <p class="header-label">Field tool</p>
-  <h1>EDC savings<br>calculator</h1>
-  <p>Show merchants how much they save with your machine.</p>
+  <p class="header-eyebrow">EDC Field Tool</p>
+  <h1>Savings <span>Calculator</span></h1>
+  <p>Show merchants what they save with your machine.</p>
 </div>
-
 <div class="body">
-
   <div class="agent-card">
-    <p class="agent-label">Aapki details</p>
+    <p class="agent-top-label">Your Details</p>
     <div id="agent-input-state">
-      <div class="agent-field">
-        <label>Aapka naam</label>
-        <div class="agent-input-wrap">
-          <input type="text" id="agent-name-input" placeholder="Naam likhein" maxlength="50">
-          <button class="agent-save-btn" onclick="saveAgent()">Save</button>
-        </div>
+      <div class="agent-field"><label>Your Name</label><div class="agent-input-wrap"><input type="text" id="agent-name-input" placeholder="Enter your name" maxlength="50"><button class="agent-save-btn" onclick="saveAgent()">Save</button></div></div>
+      <div class="agent-field"><label>Mobile Number</label><div class="agent-input-wrap"><input type="tel" id="agent-phone-input" placeholder="10 digit number" maxlength="10"></div></div>
+      <div class="agent-field"><label>Default Message Language</label>
+        <select id="agent-lang-input"><option value="hindi">Hindi</option><option value="marathi">Marathi</option><option value="gujarati">Gujarati</option><option value="tamil">Tamil</option><option value="telugu">Telugu</option><option value="kannada">Kannada</option><option value="bengali">Bengali</option><option value="punjabi">Punjabi</option><option value="urdu">Urdu (Hinglish)</option><option value="odia">Odia (Roman)</option><option value="assamese">Assamese (Roman)</option><option value="malayalam">Malayalam</option><option value="english">English</option></select>
       </div>
-      <div class="agent-field">
-        <label>Aapka mobile number</label>
-        <div class="agent-input-wrap">
-          <input type="tel" id="agent-phone-input" placeholder="10 digit number" maxlength="10">
-        </div>
+      <div class="agent-field"><label>Default Script Style</label>
+        <select id="agent-script-input"><option value="hinglish">Roman / Hinglish</option><option value="native">Native Script</option></select>
       </div>
-      <div class="agent-error" id="agent-error">Naam aur 10 digit mobile number daalna zaroori hai.</div>
+      <div class="agent-error" id="agent-error">Please enter your name and a valid 10-digit number.</div>
     </div>
     <div id="agent-saved-state" style="display:none">
-      <div class="agent-saved-row">
-        <div>
-          <p class="agent-saved-name" id="agent-saved-name"></p>
-          <p class="agent-saved-sub" id="agent-saved-phone"></p>
-        </div>
-        <button class="agent-edit-btn" onclick="editAgent()">Change</button>
-      </div>
+      <div class="agent-saved-row"><div><p class="agent-saved-name" id="agent-saved-name"></p><p class="agent-saved-sub" id="agent-saved-sub"></p></div><button class="agent-edit-btn" onclick="editAgent()">Edit</button></div>
     </div>
   </div>
-
   <div class="card">
-    <p class="sec-label">Merchant ki current setup</p>
-    <div class="field">
-      <label>Maasik card transaction volume</label>
-      <div class="input-wrap">
-        <span class="input-prefix">₹</span>
-        <input type="number" id="volume" placeholder="0" min="0">
-      </div>
-    </div>
+    <p class="sec-label">Merchant's Current Setup</p>
+    <div class="field"><label>Monthly Card Transaction Volume</label><div class="input-wrap"><span class="input-prefix">₹</span><input type="number" id="volume" placeholder="0" min="0"></div></div>
     <div class="two-col">
-      <div class="field">
-        <label>MDR %</label>
-        <div class="input-wrap">
-          <input type="number" id="cur-mdr" placeholder="0.00" step="0.01" min="0" style="padding-left:11px">
-          <span class="input-suffix">%</span>
-        </div>
-      </div>
-      <div class="field">
-        <label>Maasik kiraya (₹)</label>
-        <div class="input-wrap">
-          <span class="input-prefix">₹</span>
-          <input type="number" id="cur-rental" placeholder="0" min="0">
-        </div>
-      </div>
+      <div class="field"><label>MDR %</label><div class="input-wrap"><input type="number" id="cur-mdr" placeholder="0.00" step="0.01" min="0" style="padding-left:11px"><span class="input-suffix">%</span></div></div>
+      <div class="field"><label>Monthly Rental (₹)</label><div class="input-wrap"><span class="input-prefix">₹</span><input type="number" id="cur-rental" placeholder="0" min="0"></div></div>
     </div>
   </div>
-
   <div class="card">
-    <p class="sec-label">Aapka offer</p>
+    <p class="sec-label">Your Offer</p>
     <div class="two-col">
-      <div class="field">
-        <label>MDR %</label>
-        <div class="input-wrap">
-          <input type="number" id="our-mdr" placeholder="0.00" step="0.01" min="0" style="padding-left:11px">
-          <span class="input-suffix">%</span>
-        </div>
-      </div>
-      <div class="field">
-        <label>Maasik kiraya (₹)</label>
-        <div class="input-wrap">
-          <span class="input-prefix">₹</span>
-          <input type="number" id="our-rental" placeholder="0" min="0">
-        </div>
-      </div>
+      <div class="field"><label>MDR %</label><div class="input-wrap"><input type="number" id="our-mdr" placeholder="0.00" step="0.01" min="0" style="padding-left:11px"><span class="input-suffix">%</span></div></div>
+      <div class="field"><label>Monthly Rental (₹)</label><div class="input-wrap"><span class="input-prefix">₹</span><input type="number" id="our-rental" placeholder="0" min="0"></div></div>
     </div>
   </div>
-
-  <div class="error-msg" id="error-msg">Sabhi fields bharna zaroori hai.</div>
-  <button class="calc-btn" onclick="calculate()">Bachat calculate karein</button>
-
+  <div class="error-msg" id="error-msg">Please fill in all fields before calculating.</div>
+  <div class="btn-row">
+    <button class="btn-calc" onclick="calculate(false)">📊 Calculate<br>Savings</button>
+    <button class="btn-report" onclick="showTypePopup()">✨ Generate<br>Report / Message</button>
+  </div>
   <div class="results" id="results">
-
     <div class="hero-card" id="hero-card">
       <p class="verdict" id="verdict"></p>
       <p class="yearly-amount" id="yearly-amount"></p>
-      <p class="yearly-period">har saal ki bachat</p>
+      <p class="yearly-period">saved every year</p>
       <div class="hero-divider"></div>
       <div class="sub-row">
-        <div>
-          <p class="sub-label">5 saalon mein</p>
-          <p class="fiveyear-amount" id="fiveyear-amount"></p>
-        </div>
-        <div class="monthly-block">
-          <p class="sub-label">Har maheene</p>
-          <p class="monthly-amount" id="monthly-amount"></p>
-        </div>
+        <div><p class="sub-label">Over 5 Years</p><p class="fiveyear-amount" id="fiveyear-amount"></p></div>
+        <div class="monthly-block"><p class="sub-label">Per Month</p><p class="monthly-amount" id="monthly-amount"></p></div>
       </div>
     </div>
-
     <div class="card">
-      <p class="sec-label">Maasik breakdown</p>
-      <div class="breakup-row">
-        <span class="breakup-label">MDR bachat</span>
-        <span class="breakup-val" id="mdr-val"></span>
-      </div>
-      <div class="breakup-row">
-        <span class="breakup-label">Kiraya bachat</span>
-        <span class="breakup-val" id="rental-val"></span>
-      </div>
-      <div class="total-row">
-        <span class="total-label">Kul / maheena</span>
-        <span class="total-val" id="net-month-total"></span>
-      </div>
+      <p class="sec-label">Monthly Breakdown</p>
+      <div class="breakup-row"><span class="breakup-label">MDR Saving</span><span class="breakup-val" id="mdr-val"></span></div>
+      <div class="breakup-row"><span class="breakup-label">Rental Saving</span><span class="breakup-val" id="rental-val"></span></div>
+      <div class="total-row"><span class="total-label">Net / Month</span><span class="total-val" id="net-month-total"></span></div>
     </div>
-
     <div class="tip-box" id="tip-box">
-      <p class="tip-box-label">Wapas kab aayein</p>
-      <p class="tip-box-text">Hamaari machine tab faydemand hogi jab merchant ka maasik card transaction is amount se zyada ho jaaye:</p>
-      <p class="tip-box-amount" id="tip-amount"></p>
-      <p class="tip-box-sub">Is merchant ka number save kar lein aur business badhne par wapas aayein.</p>
+      <p class="tip-label">When To Come Back</p>
+      <p class="tip-text">Our machine becomes the better deal once monthly card transactions cross:</p>
+      <p class="tip-amount" id="tip-amount"></p>
+      <p class="tip-sub">Save this merchant's number and follow up when business grows.</p>
     </div>
-
-    <div class="copy-section" id="copy-section">
-      <p class="sec-label">Merchant ko bhejein</p>
-      <div class="msg-preview" id="msg-preview"></div>
-      <button class="copy-btn" id="copy-btn" onclick="copyMessage()">
-        <span id="copy-icon">&#128203;</span>
-        <span id="copy-text">Message copy karein</span>
-      </button>
-      <p class="copy-hint">Copy ke baad WhatsApp kholen aur merchant ko paste karke bhejein</p>
+    <div class="img-section" id="img-section">
+      <p class="sec-label">Savings Report Image</p>
+      <div id="img-generating" class="generating-msg" style="display:none"><div class="spinner"></div><div>Creating savings report...</div><div class="gen-steps" id="gen-steps"></div></div>
+      <img id="generated-img" class="generated-img" style="display:none" alt="Savings Report">
+      <p class="img-hint" id="img-hint" style="display:none">📱 Long press image → Save to Photos → Share on WhatsApp</p>
     </div>
-
-    <button class="reset-btn" onclick="reset()">← Dobara calculate karein</button>
+    <div class="msg-section" id="msg-section">
+      <p class="sec-label">WhatsApp Message</p>
+      <div id="msg-generating" class="generating-msg" style="display:none"><div class="spinner"></div><div>Creating message...</div></div>
+      <div id="msg-preview-wrap" style="display:none">
+        <div class="msg-preview" id="msg-preview"></div>
+        <button class="copy-btn" id="copy-btn" onclick="copyMessage()"><span id="copy-icon">📋</span><span id="copy-text">Copy Message</span></button>
+        <p class="copy-hint">Copy → Open WhatsApp → Paste → Send to merchant</p>
+      </div>
+    </div>
+    <button class="reset-btn" onclick="reset()">← Calculate Again</button>
   </div>
 </div>
 
+<!-- POPUP -->
+<div class="overlay" id="overlay" onclick="closeOutside(event)">
+  <div class="popup" id="popup-inner">
+
+    <!-- Step 1: Type selection -->
+    <div id="step-type">
+      <p class="popup-title">What to generate?</p>
+      <p class="popup-sub">Choose what you want to share with the merchant.</p>
+      <button class="type-btn img-btn" onclick="selectType('image')">
+        <span class="type-icon">🖼️</span>
+        <div><div class="type-info-title">Savings Image</div><div class="type-info-sub">3-column visual card — long press to save &amp; share</div></div>
+      </button>
+      <button class="type-btn msg-btn" onclick="selectType('message')">
+        <span class="type-icon">💬</span>
+        <div><div class="type-info-title">WhatsApp Message</div><div class="type-info-sub">Text message in any language — copy &amp; paste to send</div></div>
+      </button>
+      <button class="back-btn" onclick="closePopup()">Cancel</button>
+    </div>
+
+    <!-- Step 2A: Image options -->
+    <div id="step-image" style="display:none">
+      <p class="popup-title">Savings Image</p>
+      <p class="popup-sub">Choose language and merchant level.</p>
+      <div class="popup-field-label">Image Language</div>
+      <select class="popup-select" id="img-lang">
+        <option value="hindi">Hindi</option>
+        <option value="english">English</option>
+      </select>
+      <div class="popup-field-label">Merchant Level</div>
+      <button class="level-btn basic" onclick="finalGenerate('image','basic')">
+        <div class="level-btn-top"><span class="level-dot"></span><span class="level-btn-title">Basic — Premium</span></div>
+        <div class="level-btn-sub">Warm, relatable — small shop owners</div>
+      </button>
+      <button class="level-btn standard" onclick="finalGenerate('image','standard')">
+        <div class="level-btn-top"><span class="level-dot"></span><span class="level-btn-title">Standard — More Premium</span></div>
+        <div class="level-btn-sub">Aspirational, gold — mid-size merchants</div>
+      </button>
+      <button class="level-btn premium" onclick="finalGenerate('image','premium')">
+        <div class="level-btn-top"><span class="level-dot"></span><span class="level-btn-title">Premium — Ultra Premium</span></div>
+        <div class="level-btn-sub">Elite, exclusive — large merchants only</div>
+      </button>
+      <button class="back-btn" onclick="goBack('step-image','step-type')">← Back</button>
+    </div>
+
+    <!-- Step 2B: Message options -->
+    <div id="step-message" style="display:none">
+      <p class="popup-title">WhatsApp Message</p>
+      <p class="popup-sub">Choose language, script and merchant level.</p>
+      <div class="popup-field-label">Language</div>
+      <select class="popup-select" id="msg-lang">
+        <option value="hindi">Hindi</option><option value="marathi">Marathi</option><option value="gujarati">Gujarati</option><option value="tamil">Tamil</option><option value="telugu">Telugu</option><option value="kannada">Kannada</option><option value="bengali">Bengali</option><option value="punjabi">Punjabi</option><option value="urdu">Urdu (Hinglish)</option><option value="odia">Odia (Roman)</option><option value="assamese">Assamese (Roman)</option><option value="malayalam">Malayalam</option><option value="english">English</option>
+      </select>
+      <div class="popup-field-label">Script Style</div>
+      <select class="popup-select" id="msg-script">
+        <option value="hinglish">Roman / Hinglish</option>
+        <option value="native">Native Script</option>
+      </select>
+      <div class="popup-field-label">Merchant Level</div>
+      <button class="level-btn basic" onclick="finalGenerate('message','basic')">
+        <div class="level-btn-top"><span class="level-dot"></span><span class="level-btn-title">Basic</span></div>
+        <div class="level-btn-sub">Simple, warm — small merchants</div>
+      </button>
+      <button class="level-btn standard" onclick="finalGenerate('message','standard')">
+        <div class="level-btn-top"><span class="level-dot"></span><span class="level-btn-title">Standard</span></div>
+        <div class="level-btn-sub">Friendly, detailed — mid merchants</div>
+      </button>
+      <button class="level-btn premium" onclick="finalGenerate('message','premium')">
+        <div class="level-btn-top"><span class="level-dot"></span><span class="level-btn-title">Premium</span></div>
+        <div class="level-btn-sub">Professional — large merchants</div>
+      </button>
+      <button class="back-btn" onclick="goBack('step-message','step-type')">← Back</button>
+    </div>
+
+  </div>
+</div>
+
+<canvas id="canvas" style="display:none"></canvas>
+
 <script>
-var SHEET_URL = 'https://script.google.com/macros/s/AKfycbyCVUPwjRdGLFQ49QX2lwnhua8NcBzpk9a4mg4shEZLVrOvT-8o-MSmRzSYidNRO9RbAA/exec';
-var DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-var lastCalc = {};
-var lastMessage = '';
+var SHEET_URL='https://script.google.com/macros/s/AKfycbyCVUPwjRdGLFQ49QX2lwnhua8NcBzpk9a4mg4shEZLVrOvT-8o-MSmRzSYidNRO9RbAA/exec';
+var DAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+var lastCalc={};
+var lastMessage='';
 
-function fmt(n) { return '\u20b9' + Math.abs(Math.round(n)).toLocaleString('en-IN'); }
-function fmtL(n) {
-  var abs = Math.abs(Math.round(n));
-  if (abs >= 10000000) return (abs/10000000).toFixed(1).replace(/\.0$/,'') + 'Cr';
-  if (abs >= 100000)   return (abs/100000).toFixed(1).replace(/\.0$/,'')  + 'L';
-  if (abs >= 1000)     return (abs/1000).toFixed(1).replace(/\.0$/,'')    + 'K';
-  return '\u20b9' + abs.toLocaleString('en-IN');
-}
-function sign(n) { return n >= 0 ? '+ ' : '\u2212 '; }
+function fmt(n){return'\u20b9'+Math.abs(Math.round(n)).toLocaleString('en-IN')}
+function fmtL(n){var a=Math.abs(Math.round(n));if(a>=10000000)return'\u20b9'+(a/10000000).toFixed(1).replace(/\.0$/,'')+' Cr';if(a>=100000)return'\u20b9'+(a/100000).toFixed(1).replace(/\.0$/,'')+' L';return fmt(n)}
+function sign(n){return n>=0?'+ ':'\u2212 '}
 
-// --- Agent ---
-function initAgent() {
-  var name  = localStorage.getItem('edc_agent_name');
-  var phone = localStorage.getItem('edc_agent_phone');
-  if (name && phone) showSavedAgent(name, phone);
+// Agent
+function initAgent(){
+  var n=localStorage.getItem('edc_agent_name'),p=localStorage.getItem('edc_agent_phone'),l=localStorage.getItem('edc_agent_lang')||'hindi',s=localStorage.getItem('edc_agent_script')||'hinglish';
+  document.getElementById('agent-lang-input').value=l;
+  document.getElementById('agent-script-input').value=s;
+  if(n&&p)showSavedAgent(n,p,l,s);
 }
-function saveAgent() {
-  var name  = document.getElementById('agent-name-input').value.trim();
-  var phone = document.getElementById('agent-phone-input').value.trim();
-  if (!name || phone.length < 10) { document.getElementById('agent-error').style.display = 'block'; return; }
-  localStorage.setItem('edc_agent_name', name);
-  localStorage.setItem('edc_agent_phone', phone);
-  document.getElementById('agent-error').style.display = 'none';
-  showSavedAgent(name, phone);
+function saveAgent(){
+  var n=document.getElementById('agent-name-input').value.trim(),p=document.getElementById('agent-phone-input').value.trim(),l=document.getElementById('agent-lang-input').value,s=document.getElementById('agent-script-input').value;
+  if(!n||p.length<10){document.getElementById('agent-error').style.display='block';return}
+  localStorage.setItem('edc_agent_name',n);localStorage.setItem('edc_agent_phone',p);localStorage.setItem('edc_agent_lang',l);localStorage.setItem('edc_agent_script',s);
+  document.getElementById('agent-error').style.display='none';showSavedAgent(n,p,l,s);
 }
-function showSavedAgent(name, phone) {
-  document.getElementById('agent-input-state').style.display = 'none';
-  document.getElementById('agent-saved-state').style.display = 'block';
-  document.getElementById('agent-saved-name').textContent = name;
-  document.getElementById('agent-saved-phone').textContent = phone;
+function showSavedAgent(n,p,l,s){
+  document.getElementById('agent-input-state').style.display='none';
+  document.getElementById('agent-saved-state').style.display='block';
+  document.getElementById('agent-saved-name').textContent=n;
+  document.getElementById('agent-saved-sub').textContent=p+' · '+l+' · '+s;
 }
-function editAgent() {
-  document.getElementById('agent-name-input').value  = localStorage.getItem('edc_agent_name') || '';
-  document.getElementById('agent-phone-input').value = localStorage.getItem('edc_agent_phone') || '';
-  document.getElementById('agent-input-state').style.display = 'block';
-  document.getElementById('agent-saved-state').style.display = 'none';
+function editAgent(){
+  document.getElementById('agent-name-input').value=localStorage.getItem('edc_agent_name')||'';
+  document.getElementById('agent-phone-input').value=localStorage.getItem('edc_agent_phone')||'';
+  document.getElementById('agent-lang-input').value=localStorage.getItem('edc_agent_lang')||'hindi';
+  document.getElementById('agent-script-input').value=localStorage.getItem('edc_agent_script')||'hinglish';
+  document.getElementById('agent-input-state').style.display='block';
+  document.getElementById('agent-saved-state').style.display='none';
 }
 
-// --- Build WhatsApp message ---
-function buildMessage(c) {
-  var curMdrCost  = c.curMdr / 100 * c.vol;
-  var ourMdrCost  = c.ourMdr / 100 * c.vol;
-  var curTotal    = curMdrCost + c.curRental;
-  var ourTotal    = ourMdrCost + c.ourRental;
-
-  // Growth rows — start from current volume, go upward
-  var multipliers = [1, 1.5, 2, 3, 4, 5, 7.5, 10];
-  var growthLines = [];
-  var seen = {};
-  multipliers.forEach(function(m) {
-    var v = Math.round(c.vol * m / 10000) * 10000 || Math.round(c.vol * m);
-    if (v < c.vol || seen[v]) return;
-    seen[v] = true;
-    var nm = (c.mdrDiffPct * v) + (c.curRental - c.ourRental);
-    var ny = nm * 12;
-    if (nm > 0) growthLines.push('  ' + fmtL(v) + ' swipe \u2192 ' + fmt(ny) + '/saal ki bachat');
-  });
-  var growthBlock = growthLines.slice(0, 5).join('\n');
-
-  var msg =
-'Namaste \uD83D\uDC4B\n\n' +
-'Aapke liye ek *bachat report* taiyar ki hai humne \uD83D\uDE4F\n\n' +
-'\uD83D\uDCB3 *Aapka maasik card lendan:* ' + fmt(c.vol) + '\n\n' +
-'*Aap abhi kya de rahe hain:*\n' +
-'\u2022 MDR: ' + c.curMdr + '% \u2192 ' + fmt(curMdrCost) + '/maheena\n' +
-'\u2022 Kiraya: ' + fmt(c.curRental) + '/maheena\n' +
-'\u2022 *Kul: ' + fmt(curTotal) + '/maheena*\n\n' +
-'*Hamaari machine par:*\n' +
-'\u2022 MDR: ' + c.ourMdr + '% \u2192 ' + fmt(ourMdrCost) + '/maheena\n' +
-'\u2022 Kiraya: ' + fmt(c.ourRental) + '/maheena\n' +
-'\u2022 *Kul: ' + fmt(ourTotal) + '/maheena*\n\n' +
-'\u2705 *Aap bachate hain ' + fmt(c.netMonth) + ' har maheene*\n' +
-'\u2705 *Aap bachate hain ' + fmt(c.netYear) + ' har saal*\n' +
-'\u2705 *Aap bachate hain ' + fmt(c.netFiveYear) + ' paanch saalon mein*\n\n' +
-'\uD83D\uDCC8 *Jaise jaise aapka vyapaar badhega:*\n' +
-growthBlock + '\n\n' +
-'\uD83D\uDCDE Kisi bhi sawaal ke liye sampark karein:\n' +
-'*' + c.agentName + '* \u2014 ' + c.agentPhone;
-
-  return msg;
+function doCalc(){
+  var vol=parseFloat(document.getElementById('volume').value),cm=parseFloat(document.getElementById('cur-mdr').value),cr=parseFloat(document.getElementById('cur-rental').value),om=parseFloat(document.getElementById('our-mdr').value),or_=parseFloat(document.getElementById('our-rental').value);
+  if(isNaN(vol)||isNaN(cm)||isNaN(cr)||isNaN(om)||isNaN(or_))return null;
+  var ms=(cm-om)/100*vol,rs=cr-or_,nm=ms+rs,ny=nm*12,nf=nm*60,dp=(cm-om)/100,ct=(cm/100*vol)+cr,ot=(om/100*vol)+or_,bv=(nm<0&&dp>0)?(or_-cr)/dp:0;
+  return{vol,curMdr:cm,curRental:cr,ourMdr:om,ourRental:or_,mdrSaving:ms,rentalSaving:rs,netMonth:nm,netYear:ny,netFiveYear:nf,mdrDiffPct:dp,curTotalCost:ct,ourTotalCost:ot,breakevenVol:bv,result:nm>0?'Green':nm<0?'Red':'Zero',agentName:localStorage.getItem('edc_agent_name')||'',agentPhone:localStorage.getItem('edc_agent_phone')||''};
 }
 
-// --- Calculate ---
-function calculate() {
-  var agentName  = localStorage.getItem('edc_agent_name') || '';
-  var agentPhone = localStorage.getItem('edc_agent_phone') || '';
-  if (!agentName || !agentPhone) { document.getElementById('agent-error').style.display = 'block'; return; }
+function calculate(showReport){
+  var an=localStorage.getItem('edc_agent_name')||'',ap=localStorage.getItem('edc_agent_phone')||'';
+  if(!an||!ap){document.getElementById('agent-error').style.display='block';window.scrollTo({top:0,behavior:'smooth'});return false}
+  var c=doCalc();
+  if(!c){document.getElementById('error-msg').style.display='block';document.getElementById('results').style.display='none';return false}
+  document.getElementById('error-msg').style.display='none';
+  lastCalc=c;
+  var mE=document.getElementById('mdr-val');mE.textContent=sign(c.mdrSaving)+fmt(c.mdrSaving);mE.className='breakup-val '+(c.mdrSaving>0?'pos':c.mdrSaving<0?'neg':'neu');
+  var rE=document.getElementById('rental-val');rE.textContent=sign(c.rentalSaving)+fmt(c.rentalSaving);rE.className='breakup-val '+(c.rentalSaving>0?'pos':c.rentalSaving<0?'neg':'neu');
+  var nE=document.getElementById('net-month-total');nE.textContent=sign(c.netMonth)+fmt(c.netMonth);nE.className='total-val '+(c.netMonth>0?'pos':c.netMonth<0?'neg':'neu');
+  document.getElementById('hero-card').className='hero-card '+(c.netMonth>0?'saving':c.netMonth<0?'losing':'zero');
+  document.getElementById('verdict').textContent=c.netMonth>0?'Merchant Saves':c.netMonth<0?'Merchant Pays More':'No Difference';
+  document.getElementById('yearly-amount').textContent=fmt(c.netYear);
+  document.getElementById('fiveyear-amount').textContent=fmt(c.netFiveYear);
+  document.getElementById('monthly-amount').textContent=fmt(c.netMonth);
+  if(c.netMonth<0&&c.mdrDiffPct>0){document.getElementById('tip-amount').textContent=fmt(c.breakevenVol)+' monthly';document.getElementById('tip-box').style.display='block';}
+  else document.getElementById('tip-box').style.display='none';
+  document.getElementById('img-section').style.display='none';
+  document.getElementById('msg-section').style.display='none';
+  if(!showReport){
+    document.getElementById('results').style.display='block';
+    document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
+  }
+  var now=new Date();
+  fetch(SHEET_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({date:now.toLocaleDateString('en-IN'),time:now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}),dayOfWeek:DAYS[now.getDay()],agentName:c.agentName,agentPhone:c.agentPhone,volume:c.vol,curMdr:c.curMdr,curRental:c.curRental,curTotalCost:Math.round(c.curTotalCost),ourMdr:c.ourMdr,ourRental:c.ourRental,ourTotalCost:Math.round(c.ourTotalCost),mdrSaving:Math.round(c.mdrSaving),rentalSaving:Math.round(c.rentalSaving),netMonth:Math.round(c.netMonth),netYear:Math.round(c.netYear),netFiveYear:Math.round(c.netFiveYear),result:c.result,breakevenVol:Math.round(c.breakevenVol)})}).catch(function(){});
+  return true;
+}
 
-  var vol       = parseFloat(document.getElementById('volume').value);
-  var curMdr    = parseFloat(document.getElementById('cur-mdr').value);
-  var curRental = parseFloat(document.getElementById('cur-rental').value);
-  var ourMdr    = parseFloat(document.getElementById('our-mdr').value);
-  var ourRental = parseFloat(document.getElementById('our-rental').value);
+// Popup
+function showTypePopup(){
+  var an=localStorage.getItem('edc_agent_name')||'',ap=localStorage.getItem('edc_agent_phone')||'';
+  if(!an||!ap){document.getElementById('agent-error').style.display='block';window.scrollTo({top:0,behavior:'smooth'});return}
+  var c=doCalc();if(!c){document.getElementById('error-msg').style.display='block';return}
+  document.getElementById('error-msg').style.display='none';
+  // Set defaults from saved prefs
+  document.getElementById('msg-lang').value=localStorage.getItem('edc_agent_lang')||'hindi';
+  document.getElementById('msg-script').value=localStorage.getItem('edc_agent_script')||'hinglish';
+  showStep('step-type');
+  document.getElementById('overlay').classList.add('active');
+}
+function showStep(id){
+  ['step-type','step-image','step-message'].forEach(function(s){document.getElementById(s).style.display=s===id?'block':'none';});
+}
+function selectType(t){if(t==='image')showStep('step-image');else showStep('step-message');}
+function goBack(from,to){showStep(to);}
+function closeOutside(e){if(e.target===document.getElementById('overlay'))closePopup()}
+function closePopup(){document.getElementById('overlay').classList.remove('active')}
 
-  if (isNaN(vol)||isNaN(curMdr)||isNaN(curRental)||isNaN(ourMdr)||isNaN(ourRental)) {
-    document.getElementById('error-msg').style.display = 'block';
-    document.getElementById('results').style.display = 'none';
+function finalGenerate(type,level){
+  closePopup();
+  var ok=calculate(true);
+  if(!ok)return;
+  if(!lastCalc||lastCalc.netMonth<=0){
+    document.getElementById('results').style.display='block';
+    document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
     return;
   }
-  document.getElementById('error-msg').style.display = 'none';
-
-  var mdrSaving    = (curMdr - ourMdr) / 100 * vol;
-  var rentalSaving = curRental - ourRental;
-  var netMonth     = mdrSaving + rentalSaving;
-  var netYear      = netMonth * 12;
-  var netFiveYear  = netMonth * 60;
-  var mdrDiffPct   = (curMdr - ourMdr) / 100;
-  var curTotalCost = (curMdr / 100 * vol) + curRental;
-  var ourTotalCost = (ourMdr / 100 * vol) + ourRental;
-  var result       = netMonth > 0 ? 'Green - Merchant Saves' : netMonth < 0 ? 'Red - Merchant Pays More' : 'No Difference';
-  var breakevenVol = (netMonth < 0 && mdrDiffPct > 0) ? (ourRental - curRental) / mdrDiffPct : 0;
-
-  lastCalc = { agentName, agentPhone, vol, curMdr, curRental, ourMdr, ourRental,
-    mdrSaving, rentalSaving, netMonth, netYear, netFiveYear, mdrDiffPct,
-    curTotalCost, ourTotalCost, result, breakevenVol };
-
-  // UI
-  var mdrEl = document.getElementById('mdr-val');
-  mdrEl.textContent = sign(mdrSaving) + fmt(mdrSaving);
-  mdrEl.className = 'breakup-val ' + (mdrSaving>0?'pos':mdrSaving<0?'neg':'neu');
-
-  var rentalEl = document.getElementById('rental-val');
-  rentalEl.textContent = sign(rentalSaving) + fmt(rentalSaving);
-  rentalEl.className = 'breakup-val ' + (rentalSaving>0?'pos':rentalSaving<0?'neg':'neu');
-
-  var netTotalEl = document.getElementById('net-month-total');
-  netTotalEl.textContent = sign(netMonth) + fmt(netMonth);
-  netTotalEl.className = 'total-val ' + (netMonth>0?'pos':netMonth<0?'neg':'neu');
-
-  document.getElementById('hero-card').className = 'hero-card '+(netMonth>0?'saving':netMonth<0?'losing':'zero');
-  document.getElementById('verdict').textContent  = netMonth>0?'Merchant bachata hai':netMonth<0?'Merchant zyada deta hai':'Koi farak nahi';
-  document.getElementById('yearly-amount').textContent   = fmt(netYear);
-  document.getElementById('fiveyear-amount').textContent = fmt(netFiveYear);
-  document.getElementById('monthly-amount').textContent  = fmt(netMonth);
-
-  if (netMonth < 0 && mdrDiffPct > 0) {
-    document.getElementById('tip-amount').textContent = fmt(breakevenVol) + ' maasik';
-    document.getElementById('tip-box').style.display = 'block';
-    document.getElementById('copy-section').style.display = 'none';
-  } else if (netMonth > 0) {
-    document.getElementById('tip-box').style.display = 'none';
-    // Build and show message
-    lastMessage = buildMessage(lastCalc);
-    document.getElementById('msg-preview').textContent = lastMessage;
-    document.getElementById('copy-section').style.display = 'block';
-    // Reset copy button
-    document.getElementById('copy-btn').className = 'copy-btn';
-    document.getElementById('copy-text').textContent = 'Message copy karein';
-    document.getElementById('copy-icon').textContent = '\uD83D\uDCCB';
+  document.getElementById('results').style.display='block';
+  document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
+  if(type==='image'){
+    var lang=document.getElementById('img-lang').value;
+    document.getElementById('img-section').style.display='block';
+    generateImage(lastCalc,level,lang);
   } else {
-    document.getElementById('tip-box').style.display = 'none';
-    document.getElementById('copy-section').style.display = 'none';
-  }
-
-  document.getElementById('results').style.display = 'block';
-  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-  // Log to sheet
-  var now = new Date();
-  var payload = {
-    date: now.toLocaleDateString('en-IN'), time: now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}),
-    dayOfWeek: DAYS[now.getDay()], agentName, agentPhone, volume: vol,
-    curMdr, curRental, curTotalCost: Math.round(curTotalCost),
-    ourMdr, ourRental, ourTotalCost: Math.round(ourTotalCost),
-    mdrDiff: Math.round((curMdr-ourMdr)*100)/100, rentalDiff: Math.round(curRental-ourRental),
-    mdrSaving: Math.round(mdrSaving), rentalSaving: Math.round(rentalSaving),
-    netMonth: Math.round(netMonth), netYear: Math.round(netYear), netFiveYear: Math.round(netFiveYear),
-    result, breakevenVol: Math.round(breakevenVol)
-  };
-  fetch(SHEET_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).catch(function(){});
-}
-
-// --- Copy ---
-function copyMessage() {
-  if (!lastMessage) return;
-  var btn = document.getElementById('copy-btn');
-  var txt = document.getElementById('copy-text');
-  var ico = document.getElementById('copy-icon');
-
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(lastMessage).then(function() {
-      showCopied(btn, txt, ico);
-    }).catch(function() { fallbackCopy(btn, txt, ico); });
-  } else {
-    fallbackCopy(btn, txt, ico);
+    var msgLang=document.getElementById('msg-lang').value;
+    var msgScript=document.getElementById('msg-script').value;
+    document.getElementById('msg-section').style.display='block';
+    generateMessage(lastCalc,level,msgLang,msgScript);
   }
 }
 
-function fallbackCopy(btn, txt, ico) {
-  var ta = document.createElement('textarea');
-  ta.value = lastMessage;
-  ta.style.position = 'fixed';
-  ta.style.opacity = '0';
-  document.body.appendChild(ta);
-  ta.focus(); ta.select();
-  try { document.execCommand('copy'); showCopied(btn, txt, ico); } catch(e) { alert('Copy nahi hua. Message manually select karein.'); }
+// ── IMAGE GENERATION ──
+async function generateImage(c,level,lang){
+  var genEl=document.getElementById('img-generating'),imgEl=document.getElementById('generated-img'),hintEl=document.getElementById('img-hint'),stepsEl=document.getElementById('gen-steps');
+  genEl.style.display='block';imgEl.style.display='none';hintEl.style.display='none';
+  stepsEl.textContent='Getting AI savings examples...';
+  // Build 3 columns
+  var cols=[1,2,3].map(function(m){
+    var v=c.vol*m;
+    var nm=(c.mdrDiffPct*v)+(c.curRental-c.ourRental);
+    return{vol:v,nm:nm,ny:nm*12,n6:nm*6,mult:m+'x'};
+  });
+  // Get unique examples per column from API
+  var allItems=await getImageExamples(cols,level,lang);
+  stepsEl.textContent='Drawing the card...';
+  drawCard(c,level,lang,cols,allItems);
+  genEl.style.display='none';imgEl.style.display='block';hintEl.style.display='block';
+}
+
+async function getImageExamples(cols,level,lang){
+  var isHindi=(lang==='hindi');
+  var tone=level==='basic'?'everyday household items a small shopkeeper relates to (e.g. family meal out, grocery bill, mobile recharge, kids school supplies, electricity bill)':level==='standard'?'aspirational items for a growing merchant (e.g. new smartphone, family train trip, health insurance premium, kids tuition fees, home appliance)':'wealth-building items for a large successful merchant (e.g. gold coin, SIP investment, international trip, property down payment, child college fund)';
+  var langInstr=isHindi?'Write all text in Hindi using Devanagari script (हिंदी में लिखें). Use ₹ symbol for amounts.':'Write all text in English.';
+
+  // Build amounts string so API knows exact saving per column
+  var amtStr=cols.map(function(col,i){return'Column '+(i+1)+' monthly saving='+fmt(col.nm)+', yearly='+fmt(col.ny);}).join('; ');
+
+  var prompt='Generate savings usage examples for a PhonePe EDC savings report. '+langInstr+'\n\nSavings amounts:\n'+amtStr+'\n\nLevel: '+level+'\nTone: '+tone+'\n\nRules:\n- Give exactly 2 examples per column (6 total)\n- Each example must match the saving amount realistically\n- ALL 6 examples must be DIFFERENT from each other, no repetition\n- Each example = one emoji + short text (max 6 words)\n\nReturn ONLY a JSON array of 6 objects in order [col1_item1, col1_item2, col2_item1, col2_item2, col3_item1, col3_item2]:\n[{"emoji":"🍽️","text":"example text"},...]';
+
+  try{
+    var r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,messages:[{role:'user',content:prompt}]})});
+    var d=await r.json();
+    var txt=d.content.filter(function(b){return b.type==='text'}).map(function(b){return b.text}).join('');
+    var arr=JSON.parse(txt.replace(/```json|```/g,'').trim());
+    if(arr.length>=6)return arr;
+    throw new Error('not enough');
+  }catch(e){
+    // Hardcoded fallback — guaranteed unique, no repetition
+    if(isHindi){
+      return[
+        {emoji:'🍽️',text:'परिवार के साथ बाहर खाना'},{emoji:'💡',text:'बिजली का बिल भरें'},
+        {emoji:'📱',text:'नया स्मार्टफोन खरीदें'},{emoji:'🏥',text:'स्वास्थ्य बीमा प्रीमियम'},
+        {emoji:'🪙',text:'सोने का सिक्का खरीदें'},{emoji:'📈',text:'SIP में निवेश करें'}
+      ];
+    } else {
+      return[
+        {emoji:'🍽️',text:'Family dinner every month'},{emoji:'💡',text:'Electricity bill covered'},
+        {emoji:'📱',text:'New smartphone this year'},{emoji:'✈️',text:'Family trip by train'},
+        {emoji:'🪙',text:'Buy a gold coin'},{emoji:'📈',text:'Start a SIP investment'}
+      ];
+    }
+  }
+}
+
+function drawCard(c,level,lang,cols,allItems){
+  var canvas=document.getElementById('canvas');
+  var isHindi=(lang==='hindi');
+  var W=1080,pad=32,gap=18;
+  var colW=Math.floor((W-pad*2-gap*2)/3);
+
+  // Themes
+  var T={
+    basic:{bg:'#1A0A35',glow:'rgba(124,58,237,0.22)',colBg:'#241550',colBorder:'rgba(167,139,250,0.5)',accent:'#22C55E',accentDim:'rgba(34,197,94,0.15)',accentBorder:'rgba(34,197,94,0.6)',innerBg:'#1A0A35',innerBorder:'rgba(124,58,237,0.25)',barBg:'rgba(255,255,255,0.08)',topColors:['#7C3AED','#9333EA','#7C3AED'],badgeBg:'rgba(34,197,94,0.8)',badgeText:'#000',subText:'rgba(255,255,255,0.55)',bestTextColor:'#000'},
+    standard:{bg:'#0D0A00',glow:'rgba(245,158,11,0.15)',colBg:'#1C1500',colBorder:'rgba(245,158,11,0.45)',accent:'#FCD34D',accentDim:'rgba(245,158,11,0.15)',accentBorder:'rgba(245,158,11,0.6)',innerBg:'#0D0A00',innerBorder:'rgba(245,158,11,0.2)',barBg:'rgba(255,255,255,0.07)',topColors:['#7C3AED','#F59E0B','#7C3AED'],badgeBg:'rgba(245,158,11,0.85)',badgeText:'#000',subText:'rgba(255,255,255,0.55)',bestTextColor:'#000'},
+    premium:{bg:'#000000',glow:'rgba(124,58,237,0.15)',colBg:'#0C0C0C',colBorder:'rgba(245,158,11,0.35)',accent:'#F59E0B',accentDim:'rgba(245,158,11,0.1)',accentBorder:'rgba(245,158,11,0.5)',innerBg:'#050505',innerBorder:'rgba(245,158,11,0.12)',barBg:'rgba(255,255,255,0.05)',topColors:['#4C1D95','#7C3AED','#F59E0B','#7C3AED','#4C1D95'],badgeBg:'rgba(245,158,11,0.9)',badgeText:'#000',subText:'rgba(255,255,255,0.5)',bestTextColor:'#000'}
+  }[level];
+
+  var itemsPerCol=2;
+  var itemH=itemsPerCol*96;
+  var H=540+itemH;
+  canvas.width=W;canvas.height=H;
+  var ctx=canvas.getContext('2d');
+
+  // Background
+  ctx.fillStyle=T.bg;ctx.fillRect(0,0,W,H);
+  var g=ctx.createRadialGradient(W/2,0,0,W/2,0,W*0.75);
+  g.addColorStop(0,T.glow);g.addColorStop(1,'transparent');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  if(level==='premium'){
+    var g2=ctx.createRadialGradient(W,H,0,W,H,W*0.5);
+    g2.addColorStop(0,'rgba(245,158,11,0.1)');g2.addColorStop(1,'transparent');
+    ctx.fillStyle=g2;ctx.fillRect(0,0,W,H);
+    // Border
+    var bG=ctx.createLinearGradient(0,0,W,H);
+    bG.addColorStop(0,'#7C3AED');bG.addColorStop(0.4,'#F59E0B');bG.addColorStop(0.6,'#C0C0C0');bG.addColorStop(1,'#7C3AED');
+    ctx.strokeStyle=bG;ctx.lineWidth=2;ctx.strokeRect(8,8,W-16,H-16);
+  }
+  // Top bar
+  var tG=ctx.createLinearGradient(0,0,W,0);
+  T.topColors.forEach(function(c2,i){tG.addColorStop(i/(T.topColors.length-1),c2);});
+  ctx.fillStyle=tG;ctx.fillRect(0,0,W,8);
+
+  var y=28;
+  // PhonePe logo
+  ctx.fillStyle='#5B21B6';ctx.beginPath();ctx.arc(pad+20,y+20,20,0,Math.PI*2);ctx.fill();
+  ctx.font='bold 20px Arial';ctx.fillStyle='#fff';ctx.textAlign='center';ctx.fillText('pe',pad+20,y+27);
+  ctx.font='bold 26px Sora, Arial';ctx.fillStyle='#fff';ctx.textAlign='left';ctx.fillText('PhonePe',pad+50,y+27);
+  y+=58;
+
+  // MDR comparison bar
+  ctx.fillStyle=T.barBg;roundRect(ctx,pad,y,W-pad*2,44,22);ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,0.08)';ctx.lineWidth=1;roundRect(ctx,pad,y,W-pad*2,44,22);ctx.stroke();
+  var bx=pad+24,by=y+22;
+  ctx.font='500 14px Sora, Arial';ctx.fillStyle='rgba(255,255,255,0.45)';ctx.textAlign='left';
+  var lbl1=isHindi?'प्रतियोगी:':'Competitor:';
+  ctx.fillText(lbl1,bx,by+5);
+  var w1=ctx.measureText(lbl1).width;
+  ctx.font='bold 15px DM Mono, monospace';ctx.fillStyle='#F87171';
+  ctx.fillText(' '+c.curMdr+'%',bx+w1,by+5);
+  var e1=bx+w1+ctx.measureText(' '+c.curMdr+'%').width+20;
+  ctx.fillStyle='rgba(255,255,255,0.12)';ctx.fillRect(e1,y+10,1,24);
+  ctx.font='500 14px Sora, Arial';ctx.fillStyle='rgba(255,255,255,0.45)';
+  ctx.fillText('PhonePe:',e1+14,by+5);
+  var w2=ctx.measureText('PhonePe:').width;
+  ctx.font='bold 15px DM Mono, monospace';ctx.fillStyle=T.accent;
+  ctx.fillText(' '+c.ourMdr+'%',e1+14+w2,by+5);
+  var e2=e1+14+w2+ctx.measureText(' '+c.ourMdr+'%').width+20;
+  ctx.fillStyle='rgba(255,255,255,0.12)';ctx.fillRect(e2,y+10,1,24);
+  var savLbl=isHindi?'बचत:':'Saving:';
+  ctx.font='500 14px Sora, Arial';ctx.fillStyle='rgba(255,255,255,0.45)';
+  ctx.fillText(savLbl,e2+14,by+5);
+  var w3=ctx.measureText(savLbl).width;
+  ctx.font='bold 15px DM Mono, monospace';ctx.fillStyle=T.accent;
+  ctx.fillText(' '+(c.curMdr-c.ourMdr).toFixed(2)+'%',e2+14+w3,by+5);
+  y+=58;
+
+  // Headline
+  ctx.textAlign='center';
+  var hl=isHindi?'ज़्यादा स्वाइप, ज़्यादा बचत!':'More Swipes, More Savings!';
+  var sl=isHindi?'अभी स्विच करें और बचाना शुरू करें':'Switch now and start saving today';
+  if(level==='premium'){
+    var hg=ctx.createLinearGradient(0,y,W,y+50);
+    hg.addColorStop(0,'#C0C0C0');hg.addColorStop(0.5,'#FCD34D');hg.addColorStop(1,'#C0C0C0');
+    ctx.fillStyle=hg;
+  } else ctx.fillStyle='#fff';
+  ctx.font='bold 38px Sora, Arial';
+  wrapText(ctx,hl,W/2,y+32,W-pad*2,48);
+  y+=56;
+  ctx.font='500 17px Sora, Arial';ctx.fillStyle=T.subText;
+  ctx.fillText(sl,W/2,y);
+  y+=40;
+
+  // 3 columns
+  var colY=y+10;
+  var colH=H-colY-70;
+  cols.forEach(function(col,ci){
+    var cx=pad+ci*(colW+gap);
+    var items=[allItems[ci*2],allItems[ci*2+1]];
+
+    // Col bg
+    ctx.fillStyle=T.colBg;roundRect(ctx,cx,colY,colW,colH,16);ctx.fill();
+    ctx.strokeStyle=T.colBorder;ctx.lineWidth=1.5;roundRect(ctx,cx,colY,colW,colH,16);ctx.stroke();
+
+    // Monthly swipes header
+    var swLabel=isHindi?'मासिक स्वाइप':'MONTHLY SWIPES';
+    ctx.font='bold 10px Sora, Arial';ctx.fillStyle='rgba(255,255,255,0.45)';ctx.textAlign='center';
+    ctx.fillText(swLabel.toUpperCase(),cx+colW/2,colY+22);
+    ctx.font='bold 24px DM Mono, monospace';ctx.fillStyle='#fff';
+    ctx.fillText(fmtL(col.vol),cx+colW/2,colY+50);
+
+    // Divider
+    ctx.strokeStyle=T.colBorder;ctx.lineWidth=1;ctx.globalAlpha=0.35;
+    ctx.beginPath();ctx.moveTo(cx+12,colY+62);ctx.lineTo(cx+colW-12,colY+62);ctx.stroke();
+    ctx.globalAlpha=1;
+
+    var iy=colY+72;
+
+    // 6 months savings
+    var m6Lbl=isHindi?'6 महीने की बचत':'6 MONTHS SAVINGS';
+    ctx.font='bold 10px Sora, Arial';ctx.fillStyle='rgba(255,255,255,0.4)';ctx.textAlign='center';
+    ctx.fillText(m6Lbl.toUpperCase(),cx+colW/2,iy+14);
+    ctx.font='bold 27px DM Mono, monospace';ctx.fillStyle=T.accent;
+    ctx.fillText(fmt(col.n6),cx+colW/2,iy+44);
+    iy+=58;
+
+    // Saving items
+    items.forEach(function(item){
+      ctx.fillStyle=T.innerBg;roundRect(ctx,cx+10,iy,colW-20,84,10);ctx.fill();
+      ctx.strokeStyle=T.innerBorder;ctx.lineWidth=1;roundRect(ctx,cx+10,iy,colW-20,84,10);ctx.stroke();
+      ctx.font='26px Arial';ctx.textAlign='center';ctx.fillText(item.emoji||'✦',cx+colW/2,iy+34);
+      ctx.font='500 13px Sora, Arial';ctx.fillStyle='rgba(255,255,255,0.82)';
+      wrapText(ctx,item.text||'',cx+colW/2,iy+57,colW-32,17);
+      iy+=96;
+    });
+
+    // 1 year savings highlighted
+    ctx.fillStyle=T.accentDim;roundRect(ctx,cx+10,iy,colW-20,96,12);ctx.fill();
+    ctx.strokeStyle=T.accentBorder;ctx.lineWidth=1.5;roundRect(ctx,cx+10,iy,colW-20,96,12);ctx.stroke();
+    // BEST badge
+    var bestTxt=isHindi?'बेस्ट':'BEST';
+    var btw=measureW(ctx,bestTxt,'bold 11px Sora, Arial')+20;
+    ctx.fillStyle=T.badgeBg;roundRect(ctx,cx+colW/2-btw/2,iy-13,btw,26,13);ctx.fill();
+    ctx.font='bold 11px Sora, Arial';ctx.fillStyle=T.badgeText;ctx.textAlign='center';
+    ctx.fillText(bestTxt,cx+colW/2,iy+4);
+    var y1Lbl=isHindi?'1 साल की बचत':'1 YEAR SAVINGS';
+    ctx.font='bold 10px Sora, Arial';ctx.fillStyle='rgba(255,255,255,0.4)';
+    ctx.fillText(y1Lbl.toUpperCase(),cx+colW/2,iy+28);
+    ctx.font='bold 28px DM Mono, monospace';ctx.fillStyle=T.accent;
+    ctx.fillText(fmt(col.ny),cx+colW/2,iy+66);
+  });
+
+  // Footer
+  var fy=H-62;
+  ctx.strokeStyle='rgba(255,255,255,0.08)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(pad,fy);ctx.lineTo(W-pad,fy);ctx.stroke();
+  var switchLbl=isHindi?'अभी स्विच करें':'SWITCH NOW';
+  ctx.font='bold 11px Sora, Arial';ctx.fillStyle=T.accent;ctx.textAlign='left';
+  ctx.fillText(switchLbl.toUpperCase(),pad,fy+18);
+  ctx.font='600 20px Sora, Arial';ctx.fillStyle='rgba(255,255,255,0.85)';
+  ctx.fillText(c.agentName+' — '+c.agentPhone,pad,fy+42);
+  ctx.fillStyle=tG;ctx.fillRect(0,H-8,W,8);
+  document.getElementById('generated-img').src=canvas.toDataURL('image/png');
+}
+
+// ── MESSAGE GENERATION ──
+async function generateMessage(c,level,lang,script){
+  var genEl=document.getElementById('msg-generating'),wrapEl=document.getElementById('msg-preview-wrap');
+  genEl.style.display='block';wrapEl.style.display='none';
+  var msg=await buildMessage(c,level,lang,script);
+  lastMessage=msg;
+  document.getElementById('msg-preview').textContent=msg;
+  genEl.style.display='none';wrapEl.style.display='block';
+  document.getElementById('copy-btn').className='copy-btn';
+  document.getElementById('copy-text').textContent='Copy Message';
+  document.getElementById('copy-icon').textContent='📋';
+}
+
+async function buildMessage(c,level,lang,script){
+  var langNames={hindi:'Hindi',marathi:'Marathi',gujarati:'Gujarati',tamil:'Tamil',telugu:'Telugu',kannada:'Kannada',bengali:'Bengali',punjabi:'Punjabi',urdu:'Urdu in Roman script',odia:'Odia in Roman script',assamese:'Assamese in Roman script',malayalam:'Malayalam',english:'English'};
+  var langName=langNames[lang]||lang;
+  var scriptNote=script==='native'?'Use native script of '+langName+'.':'Use Roman letters / transliteration.';
+  var curMdrCost=c.curMdr/100*c.vol,ourMdrCost=c.ourMdr/100*c.vol,curTotal=curMdrCost+c.curRental,ourTotal=ourMdrCost+c.ourRental;
+  var count=level==='basic'?3:level==='standard'?4:5;
+  var tone=level==='basic'?'warm, simple, everyday comparisons for a small shopkeeper. Use emojis.':level==='standard'?'aspirational, forward-looking for a growing merchant. Use ✦ symbols.':'wealth-building, exclusive for a large merchant. Use ✦ symbols only.';
+
+  // Growth rows
+  var gRows=[];var seen={};
+  [1,1.5,2,3,4,5].forEach(function(m){
+    var v=Math.round(c.vol*m/10000)*10000||Math.round(c.vol*m);
+    if(v<c.vol||seen[v])return;seen[v]=true;
+    var nm=(c.mdrDiffPct*v)+(c.curRental-c.ourRental);
+    if(nm>0&&gRows.length<4)gRows.push({v:v,ny:nm*12});
+  });
+  var growthStr=gRows.map(function(g){return'  '+fmtL(g.v)+' \u2192 '+fmt(g.ny)+'/year'}).join('\n');
+
+  var prompt='Write a WhatsApp savings message in '+langName+'. '+scriptNote+'\n\nData:\n- Monthly saving: '+fmt(c.netMonth)+'\n- Yearly saving: '+fmt(c.netYear)+'\n- 5yr saving: '+fmt(c.netFiveYear)+'\n- Current cost: '+fmt(curTotal)+'/month\n- Our cost: '+fmt(ourTotal)+'/month\n- Current MDR: '+c.curMdr+'%\n- Our MDR: '+c.ourMdr+'%\n- Current rental: '+fmt(c.curRental)+'\n- Our rental: '+fmt(c.ourRental)+'\n\nGrowth table (include this, keep formatting):\n'+growthStr+'\n\nAgent: '+c.agentName+', '+c.agentPhone+'\nLevel: '+level+'\nTone: '+tone+'\nComparisons: '+count+' unique ones that match the saving amount realistically.\n\nFormat: greeting, volume, current cost vs our cost, savings (monthly/yearly/5yr), comparisons, growth table, agent contact.\nReturn ONLY the message text, no explanation.';
+
+  try{
+    var r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:700,messages:[{role:'user',content:prompt}]})});
+    var d=await r.json();
+    return d.content.filter(function(b){return b.type==='text'}).map(function(b){return b.text}).join('').trim();
+  }catch(e){
+    return'Namaste \uD83D\uDC4B\n\nAapke liye bachat report taiyar ki hai.\n\n\uD83D\uDCB0 Har maheene: '+fmt(c.netMonth)+'\n\u2705 Har saal: '+fmt(c.netYear)+'\n\uD83D\uDCC8 5 saalon mein: '+fmt(c.netFiveYear)+'\n\n\uD83D\uDCDE '+c.agentName+' — '+c.agentPhone;
+  }
+}
+
+function copyMessage(){
+  if(!lastMessage)return;
+  var btn=document.getElementById('copy-btn'),txt=document.getElementById('copy-text'),ico=document.getElementById('copy-icon');
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(lastMessage).then(function(){showCopied(btn,txt,ico)}).catch(function(){fallbackCopy(btn,txt,ico)});
+  } else fallbackCopy(btn,txt,ico);
+}
+function fallbackCopy(btn,txt,ico){
+  var ta=document.createElement('textarea');ta.value=lastMessage;ta.style.position='fixed';ta.style.opacity='0';
+  document.body.appendChild(ta);ta.focus();ta.select();
+  try{document.execCommand('copy');showCopied(btn,txt,ico);}catch(e){alert('Please manually select and copy the message.');}
   document.body.removeChild(ta);
 }
-
-function showCopied(btn, txt, ico) {
-  btn.className = 'copy-btn copied';
-  ico.textContent = '\u2714\uFE0F';
-  txt.textContent = 'Copy ho gaya! Ab WhatsApp par paste karein';
-  setTimeout(function() {
-    btn.className = 'copy-btn';
-    ico.textContent = '\uD83D\uDCCB';
-    txt.textContent = 'Message copy karein';
-  }, 3000);
+function showCopied(btn,txt,ico){
+  btn.className='copy-btn copied';ico.textContent='\u2714\uFE0F';txt.textContent='Copied! Paste on WhatsApp';
+  setTimeout(function(){btn.className='copy-btn';ico.textContent='📋';txt.textContent='Copy Message';},3000);
 }
 
-function reset() {
-  ['volume','cur-mdr','cur-rental','our-mdr','our-rental'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
-  document.getElementById('results').style.display = 'none';
-  document.getElementById('error-msg').style.display = 'none';
-  document.getElementById('tip-box').style.display = 'none';
-  document.getElementById('copy-section').style.display = 'none';
-  lastCalc = {}; lastMessage = '';
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+function wrapText(ctx,text,x,y,maxW,lineH){
+  if(!text)return;
+  var words=text.split(' '),line='',lines=[];
+  words.forEach(function(w){var t=line?line+' '+w:w;if(ctx.measureText(t).width>maxW&&line){lines.push(line);line=w;}else line=t;});
+  if(line)lines.push(line);
+  var sy=y-(lines.length-1)*lineH/2;
+  lines.forEach(function(l,i){ctx.fillText(l,x,sy+i*lineH);});
 }
-
+function measureW(ctx,t,f){ctx.font=f;return ctx.measureText(t).width}
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);ctx.closePath();
+}
+function reset(){
+  ['volume','cur-mdr','cur-rental','our-mdr','our-rental'].forEach(function(id){var el=document.getElementById(id);if(el)el.value=''});
+  document.getElementById('results').style.display='none';
+  document.getElementById('error-msg').style.display='none';
+  document.getElementById('tip-box').style.display='none';
+  document.getElementById('img-section').style.display='none';
+  document.getElementById('msg-section').style.display='none';
+  lastCalc={};lastMessage='';window.scrollTo({top:0,behavior:'smooth'});
+}
 initAgent();
 </script>
 </body>
