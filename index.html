@@ -99,7 +99,6 @@ select:focus{outline:none;border-color:var(--pp)}
 .copy-hint{font-size:11px;color:var(--ink-2);text-align:center;margin-top:8px}
 .reset-btn{width:100%;padding:12px;font-size:13px;font-family:'Sora',sans-serif;font-weight:600;color:var(--ink-2);background:transparent;border:1.5px solid var(--border);border-radius:14px;cursor:pointer;margin-top:4px}
 .error-msg{display:none;background:#FFFBEB;border:1.5px solid #FCD34D;border-radius:10px;padding:10px 14px;font-size:12px;color:#92400E;margin-bottom:12px}
-/* POPUP */
 .overlay{display:none;position:fixed;inset:0;background:rgba(15,10,30,.75);z-index:100;align-items:flex-end;justify-content:center;backdrop-filter:blur(6px)}
 .overlay.active{display:flex}
 .popup{background:#fff;border-radius:24px 24px 0 0;padding:1.5rem 1.25rem 2.5rem;width:100%;max-width:480px}
@@ -220,8 +219,6 @@ select:focus{outline:none;border-color:var(--pp)}
 <!-- POPUP -->
 <div class="overlay" id="overlay" onclick="closeOutside(event)">
   <div class="popup" id="popup-inner">
-
-    <!-- Step 1: Type selection -->
     <div id="step-type">
       <p class="popup-title">What to generate?</p>
       <p class="popup-sub">Choose what you want to share with the merchant.</p>
@@ -235,8 +232,6 @@ select:focus{outline:none;border-color:var(--pp)}
       </button>
       <button class="back-btn" onclick="closePopup()">Cancel</button>
     </div>
-
-    <!-- Step 2A: Image options -->
     <div id="step-image" style="display:none">
       <p class="popup-title">Savings Image</p>
       <p class="popup-sub">Choose language and merchant level.</p>
@@ -260,8 +255,6 @@ select:focus{outline:none;border-color:var(--pp)}
       </button>
       <button class="back-btn" onclick="goBack('step-image','step-type')">← Back</button>
     </div>
-
-    <!-- Step 2B: Message options -->
     <div id="step-message" style="display:none">
       <p class="popup-title">WhatsApp Message</p>
       <p class="popup-sub">Choose language, script and merchant level.</p>
@@ -289,7 +282,6 @@ select:focus{outline:none;border-color:var(--pp)}
       </button>
       <button class="back-btn" onclick="goBack('step-message','step-type')">← Back</button>
     </div>
-
   </div>
 </div>
 
@@ -322,7 +314,7 @@ function showSavedAgent(n,p,l,s){
   document.getElementById('agent-input-state').style.display='none';
   document.getElementById('agent-saved-state').style.display='block';
   document.getElementById('agent-saved-name').textContent=n;
-  document.getElementById('agent-saved-sub').textContent=p+' · '+l+' · '+s;
+  document.getElementById('agent-saved-sub').textContent=p+' \u00b7 '+l+' \u00b7 '+s;
 }
 function editAgent(){
   document.getElementById('agent-name-input').value=localStorage.getItem('edc_agent_name')||'';
@@ -337,7 +329,7 @@ function doCalc(){
   var vol=parseFloat(document.getElementById('volume').value),cm=parseFloat(document.getElementById('cur-mdr').value),cr=parseFloat(document.getElementById('cur-rental').value),om=parseFloat(document.getElementById('our-mdr').value),or_=parseFloat(document.getElementById('our-rental').value);
   if(isNaN(vol)||isNaN(cm)||isNaN(cr)||isNaN(om)||isNaN(or_))return null;
   var ms=(cm-om)/100*vol,rs=cr-or_,nm=ms+rs,ny=nm*12,nf=nm*60,dp=(cm-om)/100,ct=(cm/100*vol)+cr,ot=(om/100*vol)+or_,bv=(nm<0&&dp>0)?(or_-cr)/dp:0;
-  return{vol,curMdr:cm,curRental:cr,ourMdr:om,ourRental:or_,mdrSaving:ms,rentalSaving:rs,netMonth:nm,netYear:ny,netFiveYear:nf,mdrDiffPct:dp,curTotalCost:ct,ourTotalCost:ot,breakevenVol:bv,result:nm>0?'Green':nm<0?'Red':'Zero',agentName:localStorage.getItem('edc_agent_name')||'',agentPhone:localStorage.getItem('edc_agent_phone')||''};
+  return{vol:vol,curMdr:cm,curRental:cr,ourMdr:om,ourRental:or_,mdrSaving:ms,rentalSaving:rs,netMonth:nm,netYear:ny,netFiveYear:nf,mdrDiffPct:dp,curTotalCost:ct,ourTotalCost:ot,breakevenVol:bv,result:nm>0?'Green':nm<0?'Red':'Zero',agentName:localStorage.getItem('edc_agent_name')||'',agentPhone:localStorage.getItem('edc_agent_phone')||''};
 }
 
 function calculate(showReport){
@@ -368,13 +360,11 @@ function calculate(showReport){
   return true;
 }
 
-// Popup
 function showTypePopup(){
   var an=localStorage.getItem('edc_agent_name')||'',ap=localStorage.getItem('edc_agent_phone')||'';
   if(!an||!ap){document.getElementById('agent-error').style.display='block';window.scrollTo({top:0,behavior:'smooth'});return}
   var c=doCalc();if(!c){document.getElementById('error-msg').style.display='block';return}
   document.getElementById('error-msg').style.display='none';
-  // Set defaults from saved prefs
   document.getElementById('msg-lang').value=localStorage.getItem('edc_agent_lang')||'hindi';
   document.getElementById('msg-script').value=localStorage.getItem('edc_agent_script')||'hinglish';
   showStep('step-type');
@@ -411,84 +401,2070 @@ function finalGenerate(type,level){
   }
 }
 
-// ── IMAGE GENERATION ──
+// ═══════════════════════════════════════════════════════════════
+// COMPARISONS SYSTEM
+// getCompsObj() → returns array of multilingual objects
+//   Fields: e, en, hi, ro, mr, gu, ta, te, kn, bn, pa, ml
+//   used by message templates via compStr()
+// getRealisticComparisons() → returns formatted strings for IMAGE only
+// THESE ARE TWO SEPARATE FUNCTIONS — DO NOT MERGE OR RENAME
+// ═══════════════════════════════════════════════════════════════
+
+function getCompsObj(monthlyAmt){
+  var m=Math.abs(Math.round(monthlyAmt));
+  if(m<500) return[
+    {e:'📱',en:'Monthly mobile recharge free',hi:'हर महीने मोबाइल रिचार्ज मुफ़्त',ro:'Har mahine mobile recharge free',mr:'दर महिन्याचे मोबाईल रिचार्ज मोफत',gu:'દર મહિને મોબાઇલ રિચાર્જ મફત',ta:'மாத மொபைல் ரீசார்ஜ் இலவசம்',te:'నెల మొబైల్ రీచార్జ్ ఉచితం',kn:'ಪ್ರತಿ ತಿಂಗಳು ಮೊಬೈಲ್ ರೀಚಾರ್ಜ್ ಉಚಿತ',bn:'প্রতি মাসে মোবাইল রিচার্জ বিনামূল্যে',pa:'ਹਰ ਮਹੀਨੇ ਮੋਬਾਈਲ ਰੀਚਾਰਜ ਮੁਫ਼ਤ',ml:'മാസ്തോറും മൊബൈൽ റീചാർജ് സൗജന്യം'},
+    {e:'🚗',en:'Weekly auto/rickshaw fares saved',hi:'हफ़्ते भर के ऑटो किराए बचाएं',ro:'Hafte bhar ke auto kiraye bachao',mr:'आठवडाभराचे ऑटो भाडे वाचवा',gu:'અઠવાડિયાના ઓટો ભાડા બચો',ta:'வாரம் ஆட்டோ செலவு மிச்சம்',te:'వారం ఆటో ఛార్జీలు ఆదా',kn:'ವಾರದ ಆಟೋ ಚಾರ್ಜ್ ಉಳಿತಾಯ',bn:'সপ্তাহের অটো ভাড়া বাঁচান',pa:'ਹਫ਼ਤੇ ਦਾ ਆਟੋ ਕਿਰਾਇਆ ਬਚਾਓ',ml:'ആഴ്ചയിലെ ഓട്ടോ ചാർജ് ലാഭം'},
+    {e:'☕',en:'Daily tea and snacks all month',hi:'रोज़ाना की चाय-नाश्ते की बचत',ro:'Rozana ki chai-nashta bachao',mr:'रोजची चहा-नाश्त्याची बचत',gu:'રોજ ચા-નાસ્તો મફત',ta:'தினம் டீ-சாப்பாடு மிச்சம்',te:'రోజు టీ-అల్పాహారం ఆదా',kn:'ಪ್ರತಿ ದಿನ ಟೀ-ತಿಂಡಿ ಉಳಿತಾಯ',bn:'প্রতিদিন চা-নাস্তা সাশ্রয়',pa:'ਰੋਜ਼ਾਨਾ ਚਾਹ-ਨਾਸ਼ਤੇ ਦੀ ਬੱਚਤ',ml:'ദിനേന ചായ-നാഷ്ടം ലാഭം'},
+    {e:'💡',en:'Part of electricity bill paid',hi:'बिजली बिल का एक हिस्सा भरें',ro:'Bijli bill ka hissa bharein',mr:'वीजबिलाचा एक भाग भरा',gu:'વીજળી બિલનો ભાગ ભરો',ta:'மின் கட்டணத்தின் ஒரு பகுதி',te:'విద్యుత్ బిల్లు భాగం చెల్లింపు',kn:'ವಿದ್ಯುತ್ ಬಿಲ್ ಭಾಗ ಪಾವತಿ',bn:'বিদ্যুৎ বিলের অংশ পরিশোধ',pa:'ਬਿਜਲੀ ਬਿੱਲ ਦਾ ਹਿੱਸਾ ਭਰੋ',ml:'വൈദ്യുതി ബിൽ ഭാഗം അടയ്ക്കാം'}
+  ];
+  if(m<1500) return[
+    {e:'💡',en:'Full electricity bill paid every month',hi:'हर महीने पूरा बिजली बिल भरें',ro:'Har mahine pura bijli bill bharein',mr:'दर महिन्याचे संपूर्ण वीजबिल भरा',gu:'દર મહિને પૂરું વીજળી બિલ ભરો',ta:'ஒவ்வொரு மாதமும் மின் கட்டணம்',te:'ప్రతి నెలా పూర్తి విద్యుత్ బిల్లు',kn:'ಪ್ರತಿ ತಿಂಗಳು ಪೂರ್ಣ ವಿದ್ಯುತ್ ಬಿಲ್',bn:'প্রতি মাসে পুরো বিদ্যুৎ বিল',pa:'ਹਰ ਮਹੀਨੇ ਪੂਰਾ ਬਿਜਲੀ ਬਿੱਲ',ml:'ഓരോ മാസവും മുഴുവൻ കറണ്ട് ബിൽ'},
+    {e:'🛒',en:'Full monthly grocery run covered',hi:'हर महीने पूरी किराना खरीदारी',ro:'Har mahine puri kirana khareedari',mr:'महिन्याची संपूर्ण किराणा खरेदी',gu:'મહિનાની સઘળી કરિયાણા ખરીદી',ta:'மாத கிரஸரி கட்டணம்',te:'నెల కిరాణా ఖర్చు తీరుతుంది',kn:'ತಿಂಗಳ ಕಿರಾಣಾ ಖರ್ಚು ತೀರುತ್ತದೆ',bn:'মাসের পুরো বাজার খরচ',pa:'ਮਹੀਨੇ ਦੀ ਪੂਰੀ ਕਿਰਾਣੇ ਦੀ ਖਰੀਦ',ml:'മാസത്തെ പലചരക്ക് ചിലവ്'},
+    {e:'📚',en:'School stationery for kids',hi:'बच्चों की स्कूल स्टेशनरी',ro:'Bacchon ki school stationery',mr:'मुलांची शाळेची स्टेशनरी',gu:'બાળકોની શાળા સ્ટેશનરી',ta:'குழந்தைகளுக்கு பள்ளி பொருட்கள்',te:'పిల్లల స్కూల్ స్టేషనరీ',kn:'ಮಕ್ಕಳ ಶಾಲಾ ಸ್ಟೇಷನರಿ',bn:'শিশুদের স্কুলের স্টেশনারি',pa:'ਬੱਚਿਆਂ ਦੀ ਸਕੂਲ ਸਟੇਸ਼ਨਰੀ',ml:'കുട്ടികളുടെ സ്കൂൾ സ്റ്റേഷനറി'},
+    {e:'🍽️',en:'Family restaurant meal once a month',hi:'परिवार के साथ एक बार बाहर खाना',ro:'Parivar ke saath bahar khana',mr:'कुटुंबासोबत महिन्यातून एकदा हॉटेलात जेवण',gu:'પરિવાર સાથે મહિને એક વાર બહાર ખાવું',ta:'குடும்பத்துடன் மாதம் ஒரு ஹோட்டல் உணவு',te:'కుటుంబంతో నెలకు ఒకసారి హోటల్ భోజనం',kn:'ಕುಟುಂಬದೊಂದಿಗೆ ತಿಂಗಳಿಗೊಮ್ಮೆ ಹೋಟೆಲ್ ಊಟ',bn:'পরিবারের সাথে মাসে একবার রেস্টুরেন্ট',pa:'ਪਰਿਵਾਰ ਨਾਲ ਮਹੀਨੇ ਵਿੱਚ ਇੱਕ ਵਾਰ ਬਾਹਰ ਖਾਣਾ',ml:'കുടുംബത്തോടൊപ്പം മാസം ഒരു ഹോട്ടൽ ഭക്ഷണം'}
+  ];
+  if(m<3000) return[
+    {e:'🏠',en:'Monthly rent contribution every month',hi:'हर महीने घर के किराए में हिस्सा',ro:'Har mahine ghar ke kiraye mein hissa',mr:'दर महिन्याच्या घरभाड्यात वाटा',gu:'દર મહિને ઘરના ભાડામાં ભાગ',ta:'மாதம் வீட்டு வாடகைக்கு பங்கு',te:'నెల ఇంటి అద్దెలో వాటా',kn:'ತಿಂಗಳ ಮನೆ ಬಾಡಿಗೆ ಪಾಲು',bn:'মাসের বাড়ি ভাড়ার অংশ',pa:'ਮਹੀਨੇ ਦੇ ਘਰ ਦੇ ਕਿਰਾਏ ਵਿੱਚ ਹਿੱਸਾ',ml:'മാസ വാടകയിൽ ഒരു ഭാഗം'},
+    {e:'👕',en:'New clothes for the whole family',hi:'परिवार के लिए नए कपड़े',ro:'Parivar ke liye naye kapde',mr:'कुटुंबासाठी नवीन कपडे',gu:'પરિવાર માટે નવાં કપડાં',ta:'குடும்பத்திற்கு புதுத் துணிகள்',te:'కుటుంబానికి కొత్త బట్టలు',kn:'ಕುಟುಂಬಕ್ಕೆ ಹೊಸ ಬಟ್ಟೆ',bn:'পরিবারের জন্য নতুন পোশাক',pa:'ਪਰਿਵਾਰ ਲਈ ਨਵੇਂ ਕੱਪੜੇ',ml:'കുടുംബത്തിന് പുതു വസ്ത്രം'},
+    {e:'🎂',en:'Monthly family celebration covered',hi:'हर महीने एक परिवारी सेलिब्रेशन',ro:'Har mahine ek celebration',mr:'महिन्यातून एक कौटुंबिक उत्सव',gu:'મહિનામાં એક કૌટુંબિક ઉજવણી',ta:'மாதம் ஒரு குடும்ப கொண்டாட்டம்',te:'నెలకు ఒక కుటుంబ వేడుక',kn:'ತಿಂಗಳಿಗೊಂದು ಕುಟುಂಬ ಆಚರಣೆ',bn:'মাসে একটি পারিবারিক উদযাপন',pa:'ਮਹੀਨੇ ਵਿੱਚ ਇੱਕ ਪਰਿਵਾਰਕ ਉਤਸਵ',ml:'മാസം ഒരു കുടുംബ ആഘോഷം'},
+    {e:'📱',en:'Annual mobile plan fully covered',hi:'साल भर का मोबाइल प्लान कवर',ro:'Saal bhar ka mobile plan cover',mr:'वर्षभराचा मोबाईल प्लान कव्हर',gu:'વર્ષભરની મોબાઇલ યોજના',ta:'ஆண்டு மொபைல் திட்டம்',te:'సంవత్సరం మొబైల్ ప్లాన్',kn:'ವರ್ಷದ ಮೊಬೈಲ್ ಪ್ಲಾನ್',bn:'বার্ষিক মোবাইল প্ল্যান',pa:'ਸਾਲ ਭਰ ਦਾ ਮੋਬਾਈਲ ਪਲਾਨ',ml:'വർഷത്തെ മൊബൈൽ പ്ലാൻ'}
+  ];
+  if(m<6000) return[
+    {e:'🚂',en:'Family train trip once a year',hi:'साल में एक बार परिवार की ट्रेन यात्रा',ro:'Saal mein ek baar train yatra',mr:'वर्षातून एकदा कुटुंबाची रेल्वे सहल',gu:'વર્ષે એક વાર કુટુંબ સાથે ટ્રેન યાત્રા',ta:'வருடம் ஒரு குடும்ப ரயில் பயணம்',te:'సంవత్సరానికి ఒకసారి కుటుంబ రైలు ప్రయాణం',kn:'ವರ್ಷಕ್ಕೊಮ್ಮೆ ಕುಟುಂಬ ರೈಲು ಪ್ರಯಾಣ',bn:'বছরে একবার পারিবারিক ট্রেন ভ্রমণ',pa:'ਸਾਲ ਵਿੱਚ ਇੱਕ ਵਾਰ ਪਰਿਵਾਰ ਨਾਲ ਰੇਲ ਸਫ਼ਰ',ml:'വർഷം ഒരു കുടുംബ ട്രെയിൻ യാത്ര'},
+    {e:'🏥',en:'Annual health insurance premium',hi:'साल भर की स्वास्थ्य बीमा प्रीमियम',ro:'Saal bhar ki health insurance premium',mr:'वर्षभराचा आरोग्य विमा हप्ता',gu:'વર્ષભરનો સ્વાસ્થ્ય વીમો',ta:'ஆண்டு சுகாதார காப்பீடு',te:'సంవత్సరం ఆరోగ్య బీమా ప్రీమియం',kn:'ವರ್ಷದ ಆರೋಗ್ಯ ವಿಮೆ',bn:'বার্ষিক স্বাস্থ্য বিমা প্রিমিয়াম',pa:'ਸਾਲ ਭਰ ਦਾ ਸਿਹਤ ਬੀਮਾ',ml:'വർഷത്തെ ആരോഗ്യ ഇൻഷുറൻസ്'},
+    {e:'🛵',en:'Full bike EMI paid every month',hi:'बाइक की पूरी EMI हर महीने',ro:'Bike ki puri EMI har mahine',mr:'बाइकची संपूर्ण EMI दर महिना',gu:'બાઇકની EMI દર મહિને',ta:'மாதம் பைக் EMI',te:'నెలకు బైక్ EMI',kn:'ಪ್ರತಿ ತಿಂಗಳು ಬೈಕ್ EMI',bn:'মাসের বাইক EMI',pa:'ਮਹੀਨੇ ਦੀ ਬਾਈਕ EMI',ml:'മാസ ബൈക്ക് EMI'},
+    {e:'🏡',en:'Annual home repairs covered',hi:'साल भर की घर की मरम्मत',ro:'Saal bhar ke ghar ki marammat',mr:'वर्षभराची घरदुरुस्ती',gu:'વર્ષભરની ઘરની મરામત',ta:'வருடாந்திர வீட்டு பழுது',te:'సంవత్సరం ఇంటి మరమ్మతు',kn:'ವರ್ಷದ ಮನೆ ದುರಸ್ತಿ',bn:'বার্ষিক বাড়ি মেরামত',pa:'ਸਾਲ ਭਰ ਦੀ ਘਰ ਦੀ ਮੁਰੰਮਤ',ml:'വർഷത്തെ വീട് അറ്റകുറ്റം'}
+  ];
+  if(m<12000) return[
+    {e:'📱',en:'New mid-range smartphone every year',hi:'साल में एक नया मिड-रेंज स्मार्टफोन',ro:'Saal mein ek naya smartphone',mr:'वर्षात एक नवीन स्मार्टफोन',gu:'વર્ષે એક નવો સ્માર્ટફોન',ta:'வருடம் ஒரு புதிய ஸ்மார்ட்போன்',te:'సంవత్సరానికి ఒక కొత్త స్మార్ట్‌ఫోన్',kn:'ವರ್ಷಕ್ಕೊಂದು ಹೊಸ ಸ್ಮಾರ್ಟ್‌ಫೋನ್',bn:'বছরে একটি নতুন স্মার্টফোন',pa:'ਸਾਲ ਵਿੱਚ ਇੱਕ ਨਵਾਂ ਸਮਾਰਟਫੋਨ',ml:'വർഷം ഒരു പുതിയ സ്മാർട്ട്ഫോൺ'},
+    {e:'👨‍💼',en:'One month helper salary covered',hi:'एक महीने के हेल्पर की तनख्वाह',ro:'Ek mahine ke helper ki tankha',mr:'एक महिन्याच्या मदतनीसाचा पगार',gu:'એક મહિનાના સહાયકનો પગાર',ta:'ஒரு மாத உதவியாளர் சம்பளம்',te:'ఒక నెల సహాయకుని జీతం',kn:'ಒಂದು ತಿಂಗಳ ಸಹಾಯಕ ಸಂಬಳ',bn:'এক মাসের সহকারীর বেতন',pa:'ਇੱਕ ਮਹੀਨੇ ਦੇ ਸਹਾਇਕ ਦੀ ਤਨਖਾਹ',ml:'ഒരു മാസത്തെ ഹെൽപ്പർ ശമ്പളം'},
+    {e:'🚂',en:'AC train trip for the whole family',hi:'पूरे परिवार की AC ट्रेन यात्रा',ro:'Pure parivar ki AC train yatra',mr:'संपूर्ण कुटुंबाची AC रेल्वे सहल',gu:'આખા કુટુંબ સાથે AC ટ્રેન',ta:'குடும்பத்தோடு AC ரயில் பயணம்',te:'మొత్తం కుటుంబ AC రైలు ప్రయాణం',kn:'ಇಡೀ ಕುಟುಂಬ AC ರೈಲು ಪ್ರಯಾಣ',bn:'পুরো পরিবারের AC ট্রেন ভ্রমণ',pa:'ਪੂਰੇ ਪਰਿਵਾਰ ਦਾ AC ਰੇਲ ਸਫ਼ਰ',ml:'കുടുംബം AC ട്രെയിൻ യാത്ര'},
+    {e:'🎓',en:'Partial tuition fees annually',hi:'बच्चे की ट्यूशन फीस का हिस्सा',ro:'Bachche ki tuition fees ka hissa',mr:'मुलाच्या ट्यूशन फीचा वाटा',gu:'બાળકની ટ્યુશન ફીનો ભાગ',ta:'குழந்தையின் ட்யூஷன் கட்டணம்',te:'పిల్లల ట్యూషన్ ఫీజు',kn:'ಮಕ್ಕಳ ಟ್ಯೂಷನ್ ಶುಲ್ಕ',bn:'শিশুর টিউশন ফি',pa:'ਬੱਚੇ ਦੀ ਟਿਊਸ਼ਨ ਫ਼ੀਸ',ml:'കുട്ടിയുടെ ട്യൂഷൻ ഫീ'}
+  ];
+  if(m<25000) return[
+    {e:'🪙',en:'One gram gold coin saved every year',hi:'हर साल 1 ग्राम सोने का सिक्का',ro:'Har saal 1 gram sone ka sikka',mr:'दर वर्षी 1 ग्राम सोन्याचे नाणे',gu:'દર વર્ષ 1 ગ્રામ સોનાનો સિક્કો',ta:'ஆண்டுதோறும் 1 கிராம் தங்க நாணயம்',te:'ప్రతి సంవత్సరం 1 గ్రాం బంగారు నాణెం',kn:'ಪ್ರತಿ ವರ್ಷ 1 ಗ್ರಾಂ ಚಿನ್ನದ ನಾಣ್ಯ',bn:'প্রতি বছর ১ গ্রাম সোনার মুদ্রা',pa:'ਹਰ ਸਾਲ 1 ਗ੍ਰਾਮ ਸੋਨੇ ਦਾ ਸਿੱਕਾ',ml:'ഓരോ വർഷവും 1 ഗ്രാം സ്വർണ്ണ നാണയം'},
+    {e:'📈',en:'Monthly SIP investment started',hi:'हर महीने SIP में निवेश शुरू',ro:'Har mahine SIP mein nivesh shuru',mr:'दर महिन्यात SIP गुंतवणूक',gu:'દર મહિને SIP રોકાણ',ta:'மாதம் SIP முதலீடு',te:'నెల SIP పెట్టుబడి',kn:'ತಿಂಗಳ SIP ಹೂಡಿಕೆ',bn:'মাসিক SIP বিনিয়োগ',pa:'ਮਹੀਨਾਵਾਰ SIP ਨਿਵੇਸ਼',ml:'മാസ SIP നിക്ഷേപം'},
+    {e:'🏨',en:'2-night family hotel stay annually',hi:'साल में 2 रात परिवार के साथ होटल',ro:'Saal mein 2 raat family hotel stay',mr:'वर्षात 2 रात्री हॉटेल वास्तव्य',gu:'વર્ષે 2 રાત પરિવાર સાથે હોટેલ',ta:'வருடம் 2 இரவு குடும்ப ஹோட்டல்',te:'సంవత్సరానికి 2 రాత్రుల కుటుంబ హోటల్',kn:'ವರ್ಷಕ್ಕೆ 2 ರಾತ್ರಿ ಹೋಟೆಲ್ ವಾಸ್ತವ್ಯ',bn:'বছরে ২ রাত পারিবারিক হোটেল',pa:'ਸਾਲ ਵਿੱਚ 2 ਰਾਤ ਪਰਿਵਾਰ ਨਾਲ ਹੋਟਲ',ml:'വർഷം 2 രാത്രി കുടുംബ ഹോട്ടൽ'},
+    {e:'🎓',en:'Full year tuition fees paid',hi:'बच्चे की पूरे साल की ट्यूशन फीस',ro:'Bachche ki pure saal ki tuition fees',mr:'मुलाची वर्षभराची ट्यूशन फी',gu:'બાળકની આખા વર્ષની ટ્યૂઇશન ફી',ta:'குழந்தையின் ஆண்டு ட்யூஷன் கட்டணம்',te:'పిల్లల ఏడాది ట్యూషన్ ఫీజు',kn:'ಮಕ್ಕಳ ವರ್ಷದ ಟ್ಯೂಷನ್ ಶುಲ್ಕ',bn:'শিশুর পুরো বছরের টিউশন ফি',pa:'ਬੱਚੇ ਦੀ ਸਾਲ ਭਰ ਦੀ ਟਿਊਸ਼ਨ ਫ਼ੀਸ',ml:'കുട്ടിയുടെ വർഷത്തെ ട്യൂഷൻ ഫീ'}
+  ];
+  return[
+    {e:'📈',en:'Build a strong SIP mutual fund portfolio',hi:'हर महीने SIP में बड़ा निवेश',ro:'Har mahine SIP mein bada nivesh',mr:'दरमहा SIP मध्ये मोठी गुंतवणूक',gu:'દર મહિને SIP માં મોટું રોકાણ',ta:'மாதம் SIPல் பெரிய முதலீடு',te:'నెల SIP లో పెద్ద పెట్టుబడి',kn:'ತಿಂಗಳ SIP ದೊಡ್ಡ ಹೂಡಿಕೆ',bn:'মাসে SIPতে বড় বিনিয়োগ',pa:'ਮਹੀਨੇ SIP ਵਿੱਚ ਵੱਡਾ ਨਿਵੇਸ਼',ml:'മാസ SIPൽ വലിയ നിക്ഷേപം'},
+    {e:'🪙',en:'2-3 gram gold saved annually',hi:'साल में 2-3 ग्राम सोना बचाएं',ro:'Saal mein 2-3 gram sona bachao',mr:'वर्षात 2-3 ग्राम सोने',gu:'વર્ષે 2-3 ગ્રામ સોનું',ta:'வருடம் 2-3 கிராம் தங்கம்',te:'సంవత్సరానికి 2-3 గ్రాముల బంగారం',kn:'ವರ್ಷಕ್ಕೆ 2-3 ಗ್ರಾಂ ಚಿನ್ನ',bn:'বছরে ২-৩ গ্রাম সোনা',pa:'ਸਾਲ ਵਿੱਚ 2-3 ਗ੍ਰਾਮ ਸੋਨਾ',ml:'വർഷം 2-3 ഗ്രാം സ്വർണ്ണം'},
+    {e:'🎓',en:'Full year college fees covered',hi:'बच्चे की पूरे साल की कॉलेज फीस',ro:'Bachche ki pure saal ki college fees',mr:'मुलाची वर्षभराची कॉलेज फी',gu:'બાળકની આખા વર્ષની કૉલેજ ફી',ta:'குழந்தையின் ஆண்டு கல்லூரி கட்டணம்',te:'పిల్లల సంవత్సరం కాలేజ్ ఫీజు',kn:'ಮಕ್ಕಳ ವರ್ಷದ ಕಾಲೇಜ್ ಶುಲ್ಕ',bn:'শিশুর পুরো বছরের কলেজ ফি',pa:'ਬੱਚੇ ਦੀ ਸਾਲ ਭਰ ਦੀ ਕਾਲਜ ਫ਼ੀਸ',ml:'കുട്ടിയുടെ വർഷത്തെ കോളേജ് ഫീ'},
+    {e:'🏠',en:'Property down payment fund built',hi:'संपत्ति के डाउन पेमेंट में योगदान',ro:'Sampatti ke down payment mein',mr:'मालमत्तेच्या डाउन पेमेंटसाठी',gu:'મિલકત ડાઉન પેમેન્ટ ભंડોળ',ta:'சொத்து டவுன் பேமெண்ட்',te:'ఆస్తి డౌన్ పేమెంట్',kn:'ಆಸ್ತಿ ಡೌನ್ ಪೇಮೆಂಟ್',bn:'সম্পত্তির ডাউন পেমেন্ট',pa:'ਜਾਇਦਾਦ ਦਾ ਡਾਊਨ ਪੇਮੈਂਟ',ml:'സ്വത്ത് ഡൗൺ പേമെന്റ്'}
+  ];
+}
+
+// compStr: renders comparison objects for message templates
+// lang = language string, script = 'native' or 'hinglish'/'r', level for bullet style
+function compStr(comps,lang,script,level){
+  var isNative=(script==='native'||script==='n');
+  var nativeField={hindi:'hi',marathi:'mr',gujarati:'gu',tamil:'ta',telugu:'te',kannada:'kn',bengali:'bn',punjabi:'pa',malayalam:'ml'};
+  return comps.map(function(c2){
+    var txt;
+    if(lang==='english'){txt=c2.en;}
+    else if(isNative&&nativeField[lang]){txt=c2[nativeField[lang]];if(!txt)txt=c2.ro;}
+    else{txt=c2.ro;}
+    if(!txt||txt==='undefined')txt=c2.en||'';
+    return c2.e+' '+txt;
+  }).join('\n');
+}
+
+function growthBlock(rows,lang,script){
+  var isNative=(script==='native'||script==='n');
+  var yr=lang==='english'?'/year':(isNative?'/साल':'/saal');
+  return rows.map(function(r){
+    return fmt(r.v)+' \u2192 '+fmt(r.ny)+yr;
+  }).join('\n');
+}
+
+// ── IMAGE-ONLY comparisons (returns formatted strings) ──
+// colOffset ensures each column gets different items even within same savings tier
+function getRealisticComparisons(monthlyAmt,level,lang,count,colOffset){
+  var objs=getCompsObj(monthlyAmt);
+  var cnt=count||2;
+  var off=colOffset||0;
+  // Pick items starting at offset, wrapping around pool — guarantees uniqueness across cols
+  var selected=[];
+  for(var i=0;i<cnt;i++){
+    selected.push(objs[(off+i)%objs.length]);
+  }
+  var isEnglish=(lang==='english');
+  var isHindi=(lang==='hindi');
+  return selected.map(function(item){
+    var txt=isEnglish?item.en:isHindi?item.hi:item.ro;
+    if(!txt) txt=item.en||'';
+    return item.e+' '+txt;
+  });
+}
+
+// ── buildTemplateData: used by all MSG templates ──
+function buildTemplateData(c){
+  var curMdrCost=Math.round(c.curMdr/100*c.vol);
+  var ourMdrCost=Math.round(c.ourMdr/100*c.vol);
+  var curTotal=curMdrCost+c.curRental;
+  var ourTotal=ourMdrCost+c.ourRental;
+  var gRows=[];var seen={};
+  [1,1.5,2,3,4,5].forEach(function(m){
+    var v=Math.round(c.vol*m/10000)*10000||Math.round(c.vol*m);
+    if(v<c.vol||seen[v])return;seen[v]=true;
+    var nm=(c.mdrDiffPct*v)+(c.curRental-c.ourRental);
+    if(nm>0&&gRows.length<4)gRows.push({v:v,ny:Math.round(nm*12),nm:Math.round(nm)});
+  });
+  // Use getCompsObj (returns objects with .en/.hi/.ro) — NOT getRealisticComparisons
+  var comps=getCompsObj(c.netMonth);
+  return{
+    vol:fmt(c.vol),nm:fmt(c.netMonth),ny:fmt(c.netYear),nf:fmt(c.netFiveYear),
+    curTotal:fmt(curTotal),ourTotal:fmt(ourTotal),
+    curMdr:c.curMdr,ourMdr:c.ourMdr,curRent:fmt(c.curRental),ourRent:fmt(c.ourRental),
+    agent:c.agentName,phone:c.agentPhone,
+    growth:gRows,comps:comps
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ALL MESSAGE TEMPLATES
+// Each native language has 3 DISTINCT templates (basic/standard/premium)
+// with genuinely different structure, tone, symbols and detail level
+// ═══════════════════════════════════════════════════════════════
+var MSG={};
+
+// ── HINDI ROMAN ──
+MSG['hindi_r_basic']=function(d){return[
+'Namaste 👋',
+'',
+'Aapke liye ek *bachat report* taiyar ki hai 🙏',
+'',
+'📱 Maasik card lendan: *'+d.vol+'*',
+'',
+'🚫 Aap abhi dete hain: *'+d.curTotal+'/maheena*',
+'✅ Hamaari machine par: *'+d.ourTotal+'/maheena*',
+'',
+'💰 *Har maheene bachat: '+d.nm+'*',
+'🎉 *Har saal bachat: '+d.ny+'*',
+'📈 *5 saalon mein: '+d.nf+'*',
+'',
+'Yeh bachat matlab:',
+compStr(d.comps,'hindi','r','basic'),
+'',
+'📅 Vyapaar badhne par bachat:',
+growthBlock(d.growth,'hindi','r'),
+'',
+'📞 Aaj hi sampark karein:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['hindi_r_standard']=function(d){return[
+'Namaste 👋',
+'',
+'Aapke vyapaar ke liye ek *savings analysis* taiyar ki hai.',
+'',
+'📊 Maasik card volume: *'+d.vol+'*',
+'',
+'*Aapki abhi ki laagat:*',
+'• MDR ('+d.curMdr+'%)',
+'• Kiraya: '+d.curRent,
+'• *Kul: '+d.curTotal+'/maheena*',
+'',
+'*Hamaare saath laagat:*',
+'• MDR ('+d.ourMdr+'%)',
+'• Kiraya: '+d.ourRent,
+'• *Kul: '+d.ourTotal+'/maheena*',
+'',
+'✦ *Maasik bachat: '+d.nm+'*',
+'✦ *Varshik bachat: '+d.ny+'*',
+'✦ *5 saal mein: '+d.nf+'*',
+'',
+'*Bachat se aap kar sakte hain:*',
+compStr(d.comps,'hindi','r','standard'),
+'',
+'*Vyapaar badhne par aapki bachat:*',
+growthBlock(d.growth,'hindi','r'),
+'',
+'Adhik jaankari ke liye:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['hindi_r_premium']=function(d){return[
+'Aadaraniy Merchant,',
+'',
+'Aapke vyapaar ke liye ek *vishesh bachat vivran* neeche prastut hai.',
+'',
+'📊 Maasik card lendan: *'+d.vol+'*',
+'',
+'*Vartamaan maasik vyay:*',
+'• MDR ('+d.curMdr+'%)',
+'• Maasik kiraya: '+d.curRent,
+'• *Kul maasik laagat: '+d.curTotal+'*',
+'',
+'*PhonePe ke saath maasik vyay:*',
+'• MDR ('+d.ourMdr+'%)',
+'• Maasik kiraya: '+d.ourRent,
+'• *Kul maasik laagat: '+d.ourTotal+'*',
+'',
+'*Aapki shuddh maasik bachat:*',
+'✦ Maasik: *'+d.nm+'*',
+'✦ Varshik: *'+d.ny+'*',
+'✦ 5 varsh: *'+d.nf+'*',
+'',
+'*Bachat ka upyog:*',
+compStr(d.comps,'hindi','r','premium'),
+'',
+'*Vikas ke saath bachat ka anumaan:*',
+growthBlock(d.growth,'hindi','r'),
+'',
+'Vishesh jaankari hetu sampark karein:',
+'*'+d.agent+'* | '+d.phone
+].join('\n');};
+
+// ── HINDI NATIVE ──
+MSG['hindi_n_basic']=function(d){return[
+'नमस्ते 👋',
+'',
+'आपके लिए एक *बचत रिपोर्ट* तैयार की है 🙏',
+'',
+'📱 मासिक कार्ड लेनदेन: *'+d.vol+'*',
+'',
+'🚫 अभी आप देते हैं: *'+d.curTotal+'/महीना*',
+'✅ हमारी मशीन पर: *'+d.ourTotal+'/महीना*',
+'',
+'💰 *हर महीने बचत: '+d.nm+'*',
+'🎉 *हर साल बचत: '+d.ny+'*',
+'📈 *5 सालों में: '+d.nf+'*',
+'',
+'यह बचत मतलब:',
+compStr(d.comps,'hindi','native','basic'),
+'',
+'📅 व्यापार बढ़ने पर बचत:',
+growthBlock(d.growth,'hindi','native'),
+'',
+'📞 आज ही संपर्क करें:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['hindi_n_standard']=function(d){return[
+'नमस्ते 👋',
+'',
+'आपके व्यापार के लिए एक *बचत विश्लेषण* तैयार की है।',
+'',
+'📊 मासिक कार्ड वॉल्यूम: *'+d.vol+'*',
+'',
+'*अभी की मासिक लागत:*',
+'• MDR ('+d.curMdr+'%)',
+'• किराया: '+d.curRent,
+'• *कुल: '+d.curTotal+'/महीना*',
+'',
+'*हमारे साथ लागत:*',
+'• MDR ('+d.ourMdr+'%)',
+'• किराया: '+d.ourRent,
+'• *कुल: '+d.ourTotal+'/महीना*',
+'',
+'✦ *मासिक बचत: '+d.nm+'*',
+'✦ *वार्षिक बचत: '+d.ny+'*',
+'✦ *5 वर्ष में: '+d.nf+'*',
+'',
+'*बचत का उपयोग:*',
+compStr(d.comps,'hindi','native','standard'),
+'',
+'*व्यापार बढ़ने पर आपकी बचत:*',
+growthBlock(d.growth,'hindi','native'),
+'',
+'अधिक जानकारी के लिए:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['hindi_n_premium']=function(d){return[
+'आदरणीय व्यापारी,',
+'',
+'आपके व्यापार के लिए एक *विशेष बचत विवरण* नीचे प्रस्तुत है।',
+'',
+'📊 मासिक कार्ड लेनदेन: *'+d.vol+'*',
+'',
+'*वर्तमान मासिक व्यय:*',
+'• MDR ('+d.curMdr+'%)',
+'• मासिक किराया: '+d.curRent,
+'• *कुल मासिक लागत: '+d.curTotal+'*',
+'',
+'*PhonePe के साथ:*',
+'• MDR ('+d.ourMdr+'%)',
+'• मासिक किराया: '+d.ourRent,
+'• *कुल मासिक लागत: '+d.ourTotal+'*',
+'',
+'*आपकी शुद्ध बचत:*',
+'✦ मासिक: *'+d.nm+'*',
+'✦ वार्षिक: *'+d.ny+'*',
+'✦ 5 वर्ष: *'+d.nf+'*',
+'',
+'*बचत से संभव:*',
+compStr(d.comps,'hindi','native','premium'),
+'',
+'*विकास के साथ बचत:*',
+growthBlock(d.growth,'hindi','native'),
+'',
+'संपर्क करें:',
+'*'+d.agent+'* | '+d.phone
+].join('\n');};
+
+// ── MARATHI ROMAN ──
+MSG['marathi_r_basic']=function(d){return[
+'Namaskar 👋',
+'',
+'Tumchyasathi ek *bachat report* taiyar keli ahe 🙏',
+'',
+'📱 Maasik card vyavahar: *'+d.vol+'*',
+'',
+'🚫 Tumhi aata deta: *'+d.curTotal+'/mahina*',
+'✅ Amchya machine var: *'+d.ourTotal+'/mahina*',
+'',
+'💰 *Pratyek mahina bachat: '+d.nm+'*',
+'🎉 *Pratyek varsha bachat: '+d.ny+'*',
+'📈 *5 varshat: '+d.nf+'*',
+'',
+'Hi bachat vaparli tari:',
+compStr(d.comps,'marathi','r','basic'),
+'',
+'📅 Vyavsay vadhlyavar tumchi bachat:',
+growthBlock(d.growth,'marathi','r'),
+'',
+'📞 Aaj samparka kara:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['marathi_r_standard']=function(d){return[
+'Namaskar 👋',
+'',
+'Tumchya vyavsayasathi ek *savings vishleshan* taiyar aahe.',
+'',
+'📊 Maasik card vyavahar: *'+d.vol+'*',
+'',
+'*Saadhya maasik kharch:*',
+'• MDR ('+d.curMdr+'%) | Bhaade: '+d.curRent,
+'• *Ekun: '+d.curTotal+'/mahina*',
+'',
+'*Amchyasaha maasik kharch:*',
+'• MDR ('+d.ourMdr+'%) | Bhaade: '+d.ourRent,
+'• *Ekun: '+d.ourTotal+'/mahina*',
+'',
+'✦ *Maasik bachat: '+d.nm+'*',
+'✦ *Varshik bachat: '+d.ny+'*',
+'✦ *5 varshat: '+d.nf+'*',
+'',
+'*Ya bachatine tumhi karu shakata:*',
+compStr(d.comps,'marathi','r','standard'),
+'',
+'*Vyavsay vadhlyavar bachat:*',
+growthBlock(d.growth,'marathi','r'),
+'',
+'Adhik mahitisaathi:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['marathi_r_premium']=function(d){return[
+'Aadaraniy Merchant,',
+'',
+'Tumchya vyavsayasathi ek *vishesh bachat vivaran* khali dile aahe.',
+'',
+'📊 Maasik card vyavahar: *'+d.vol+'*',
+'',
+'*Saadhya maasik vyay:*',
+'• MDR ('+d.curMdr+'%) | Bhaade: '+d.curRent,
+'• *Ekun maasik laagat: '+d.curTotal+'*',
+'',
+'*PhonePe sobat:*',
+'• MDR ('+d.ourMdr+'%) | Bhaade: '+d.ourRent,
+'• *Ekun maasik laagat: '+d.ourTotal+'*',
+'',
+'*Tumchi nishchit bachat:*',
+'✦ Maasik: *'+d.nm+'*',
+'✦ Varshik: *'+d.ny+'*',
+'✦ 5 varshe: *'+d.nf+'*',
+'',
+'*Bachatiche upyog:*',
+compStr(d.comps,'marathi','r','premium'),
+'',
+'*Vikas sangata bachat:*',
+growthBlock(d.growth,'marathi','r'),
+'',
+'Sampark kara:',
+'*'+d.agent+'* | '+d.phone
+].join('\n');};
+
+// ── MARATHI NATIVE ──
+MSG['marathi_n_basic']=function(d){return[
+'नमस्कार 👋',
+'',
+'तुमच्यासाठी एक *बचत रिपोर्ट* तयार केली आहे 🙏',
+'',
+'📱 मासिक कार्ड व्यवहार: *'+d.vol+'*',
+'',
+'🚫 तुम्ही आता देता: *'+d.curTotal+'/महिना*',
+'✅ आमच्या मशीनवर: *'+d.ourTotal+'/महिना*',
+'',
+'💰 *प्रत्येक महिना बचत: '+d.nm+'*',
+'🎉 *प्रत्येक वर्ष बचत: '+d.ny+'*',
+'📈 *5 वर्षांत: '+d.nf+'*',
+'',
+'ही बचत वापरली तर:',
+compStr(d.comps,'marathi','native','basic'),
+'',
+'📅 व्यवसाय वाढल्यास तुमची बचत:',
+growthBlock(d.growth,'marathi','native'),
+'',
+'📞 आज संपर्क करा:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['marathi_n_standard']=function(d){return[
+'नमस्कार 👋',
+'',
+'तुमच्या व्यवसायासाठी एक *बचत विश्लेषण* तयार आहे।',
+'',
+'📊 मासिक कार्ड व्यवहार: *'+d.vol+'*',
+'',
+'*सध्याचा मासिक खर्च:*',
+'• MDR ('+d.curMdr+'%) | भाडे: '+d.curRent,
+'• *एकूण: '+d.curTotal+'/महिना*',
+'',
+'*आमच्यासह मासिक खर्च:*',
+'• MDR ('+d.ourMdr+'%) | भाडे: '+d.ourRent,
+'• *एकूण: '+d.ourTotal+'/महिना*',
+'',
+'✦ *मासिक बचत: '+d.nm+'*',
+'✦ *वार्षिक बचत: '+d.ny+'*',
+'✦ *5 वर्षांत: '+d.nf+'*',
+'',
+'*या बचतीने तुम्ही करू शकता:*',
+compStr(d.comps,'marathi','native','standard'),
+'',
+'*व्यवसाय वाढल्यावर बचत:*',
+growthBlock(d.growth,'marathi','native'),
+'',
+'अधिक माहितीसाठी:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['marathi_n_premium']=function(d){return[
+'आदरणीय व्यापारी,',
+'',
+'तुमच्या व्यवसायासाठी एक *विशेष बचत विवरण* खाली दिले आहे।',
+'',
+'📊 मासिक कार्ड व्यवहार: *'+d.vol+'*',
+'',
+'*सध्याचा मासिक व्यय:*',
+'• MDR ('+d.curMdr+'%) | भाडे: '+d.curRent,
+'• *एकूण: '+d.curTotal+'*',
+'',
+'*PhonePe सोबत:*',
+'• MDR ('+d.ourMdr+'%) | भाडे: '+d.ourRent,
+'• *एकूण: '+d.ourTotal+'*',
+'',
+'*तुमची निश्चित बचत:*',
+'✦ मासिक: *'+d.nm+'*',
+'✦ वार्षिक: *'+d.ny+'*',
+'✦ 5 वर्षे: *'+d.nf+'*',
+'',
+'*बचतीचे उपयोग:*',
+compStr(d.comps,'marathi','native','premium'),
+'',
+'*विकासासह बचत:*',
+growthBlock(d.growth,'marathi','native'),
+'',
+'संपर्क करा:',
+'*'+d.agent+'* | '+d.phone
+].join('\n');};
+
+// ── GUJARATI ROMAN ──
+MSG['gujarati_r_basic']=function(d){return[
+'Namaskar 👋',
+'',
+'Tamara maate ek *bachat report* taiyar kari chhe 🙏',
+'',
+'📱 Maasik card vyavahar: *'+d.vol+'*',
+'',
+'🚫 Tame haal aapo chho: *'+d.curTotal+'/mahino*',
+'✅ Amari machine par: *'+d.ourTotal+'/mahino*',
+'',
+'💰 *Pratyek mahine bachat: '+d.nm+'*',
+'🎉 *Pratek varshe bachat: '+d.ny+'*',
+'📈 *5 varshe ma: '+d.nf+'*',
+'',
+'Aa bachat vaaparo:',
+compStr(d.comps,'gujarati','r','basic'),
+'',
+'📅 Dhandho vadhva sathe bachat:',
+growthBlock(d.growth,'gujarati','r'),
+'',
+'📞 Aaj sampark karo:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['gujarati_r_standard']=function(d){return[
+'Namaskar 👋',
+'',
+'Tamara vyavsay maate ek *savings analysis* taiyar chhe.',
+'',
+'📊 Maasik card vyavahar: *'+d.vol+'*',
+'',
+'*Haal maasik kharch:*',
+'• MDR ('+d.curMdr+'%) | Bhaadu: '+d.curRent,
+'• *Ekun: '+d.curTotal+'/mahino*',
+'',
+'*Amari machine sathe:*',
+'• MDR ('+d.ourMdr+'%) | Bhaadu: '+d.ourRent,
+'• *Ekun: '+d.ourTotal+'/mahino*',
+'',
+'✦ *Maasik bachat: '+d.nm+'*',
+'✦ *Varshik bachat: '+d.ny+'*',
+'✦ *5 varshe: '+d.nf+'*',
+'',
+'*Aa bachat thi tame kari shako:*',
+compStr(d.comps,'gujarati','r','standard'),
+'',
+'*Vyavsay vadhva sathe bachat:*',
+growthBlock(d.growth,'gujarati','r'),
+'',
+'Adhik mahiti maate:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['gujarati_r_premium']=function(d){return[
+'Aadaraniy Merchant,',
+'',
+'Tamara vyavsay maate *vishesh bachat vivaran* neeche chhe.',
+'',
+'📊 Maasik card vyavahar: *'+d.vol+'*',
+'',
+'*Haal maasik vyay:*',
+'• MDR ('+d.curMdr+'%) | Bhaadu: '+d.curRent,
+'• *Ekun maasik laagat: '+d.curTotal+'*',
+'',
+'*PhonePe sathe:*',
+'• MDR ('+d.ourMdr+'%) | Bhaadu: '+d.ourRent,
+'• *Ekun maasik laagat: '+d.ourTotal+'*',
+'',
+'*Tamari nischit bachat:*',
+'✦ Maasik: *'+d.nm+'*',
+'✦ Varshik: *'+d.ny+'*',
+'✦ 5 varshe: *'+d.nf+'*',
+'',
+'*Bachat no upyog:*',
+compStr(d.comps,'gujarati','r','premium'),
+'',
+'*Vikas sathe bachat:*',
+growthBlock(d.growth,'gujarati','r'),
+'',
+'Sampark karo:',
+'*'+d.agent+'* | '+d.phone
+].join('\n');};
+
+// ── GUJARATI NATIVE ──
+MSG['gujarati_n_basic']=function(d){return[
+'નમસ્કાર 👋',
+'',
+'તમારા માટે એક *બચત રિપોર્ટ* તૈયાર કરી છે 🙏',
+'',
+'📱 માસિક કાર્ડ વ્યવહાર: *'+d.vol+'*',
+'',
+'🚫 અત્યારે આપો છો: *'+d.curTotal+'/મહિનો*',
+'✅ અમારી મશીન પર: *'+d.ourTotal+'/મહિનો*',
+'',
+'💰 *દર મહિને બચત: '+d.nm+'*',
+'🎉 *દર વર્ષે બચત: '+d.ny+'*',
+'📈 *5 વર્ષમાં: '+d.nf+'*',
+'',
+'આ બચત વાપરો:',
+compStr(d.comps,'gujarati','native','basic'),
+'',
+'📅 ધંધો વધ્યા સાથે બચત:',
+growthBlock(d.growth,'gujarati','native'),
+'',
+'📞 આજે સંપર્ક કરો:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['gujarati_n_standard']=function(d){return[
+'નમસ્કાર 👋',
+'',
+'તમારા વ્યવસાય માટે એક *બચત વિશ્લેષણ* તૈયાર છે।',
+'',
+'📊 માસિક કાર્ડ વ્યવહાર: *'+d.vol+'*',
+'',
+'*હાલ માસિક ખર્ચ:*',
+'• MDR ('+d.curMdr+'%) | ભાડું: '+d.curRent,
+'• *કુલ: '+d.curTotal+'/મહિનો*',
+'',
+'*અમારી મશીન સાથે:*',
+'• MDR ('+d.ourMdr+'%) | ભાડું: '+d.ourRent,
+'• *કુલ: '+d.ourTotal+'/મહિનો*',
+'',
+'✦ *માસિક બચત: '+d.nm+'*',
+'✦ *વાર્ષિક બચત: '+d.ny+'*',
+'✦ *5 વર્ષે: '+d.nf+'*',
+'',
+'*આ બચતથી તમે કરી શકો:*',
+compStr(d.comps,'gujarati','native','standard'),
+'',
+'*ધંધો વધ્યા સાથે બચત:*',
+growthBlock(d.growth,'gujarati','native'),
+'',
+'વધુ માહિતી માટે:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['gujarati_n_premium']=function(d){return[
+'આદરણીય વ્યાપારી,',
+'',
+'તમારા વ્યવસાય માટે *વિશેષ બચત વિવરણ* નીચે છે।',
+'',
+'📊 માસિક કાર્ડ વ્યવહાર: *'+d.vol+'*',
+'',
+'*હાલ માસિક વ્યય:*',
+'• MDR ('+d.curMdr+'%) | ભાડું: '+d.curRent,
+'• *કુલ: '+d.curTotal+'*',
+'',
+'*PhonePe સાથે:*',
+'• MDR ('+d.ourMdr+'%) | ભાડું: '+d.ourRent,
+'• *કુલ: '+d.ourTotal+'*',
+'',
+'*તમારી નિશ્ચિત બચત:*',
+'✦ માસિક: *'+d.nm+'*',
+'✦ વાર્ષિક: *'+d.ny+'*',
+'✦ 5 વર્ષ: *'+d.nf+'*',
+'',
+'*બચતનો ઉપયોગ:*',
+compStr(d.comps,'gujarati','native','premium'),
+'',
+'*વિકાસ સાથે બચત:*',
+growthBlock(d.growth,'gujarati','native'),
+'',
+'સંપર્ક કરો:',
+'*'+d.agent+'* | '+d.phone
+].join('\n');};
+
+// ── TAMIL ROMAN ──
+MSG['tamil_r_basic']=function(d){return[
+'Vanakkam 👋',
+'',
+'Ungalukkaga oru *savings report* ready pannirukkom 🙏',
+'',
+'📱 Maasam card transaction: *'+d.vol+'*',
+'',
+'🚫 Ippo neengal kodukkireer: *'+d.curTotal+'/maasam*',
+'✅ Engal machine-la: *'+d.ourTotal+'/maasam*',
+'',
+'💰 *Oru maasam semipu: '+d.nm+'*',
+'🎉 *Oru varusham semipu: '+d.ny+'*',
+'📈 *5 varusham: '+d.nf+'*',
+'',
+'Semippu payan:',
+compStr(d.comps,'tamil','r','basic'),
+'',
+'📅 Vyaabaaram valadhadhu:',
+growthBlock(d.growth,'tamil','r'),
+'',
+'📞 Ippothe thodarbu kollunga:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['tamil_r_standard']=function(d){return[
+'Vanakkam 👋',
+'',
+'Ungal thozhilukkaaga oru *savings analysis* ready aachu.',
+'',
+'📊 Maasam card volume: *'+d.vol+'*',
+'',
+'*Ippotha maasa sella:*',
+'• MDR ('+d.curMdr+'%) | Vaadagai: '+d.curRent,
+'• *Mottham: '+d.curTotal+'/maasam*',
+'',
+'*Engaludan maasa sella:*',
+'• MDR ('+d.ourMdr+'%) | Vaadagai: '+d.ourRent,
+'• *Mottham: '+d.ourTotal+'/maasam*',
+'',
+'✦ *Maasa semipu: '+d.nm+'*',
+'✦ *Varusha semipu: '+d.ny+'*',
+'✦ *5 varusham: '+d.nf+'*',
+'',
+'*Aa semipu kondhu neenga seiyalam:*',
+compStr(d.comps,'tamil','r','standard'),
+'',
+'*Vyaabaaram valadhadhu:*',
+growthBlock(d.growth,'tamil','r'),
+'',
+'Meendum thodarbu kollunga:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['tamil_r_premium']=function(d){return[
+'Maanikkamaana Merchant,',
+'',
+'Ungal thozhilukkana *seermaiya semippu aaivu* keezhey:',
+'',
+'📊 Maasam card: *'+d.vol+'*',
+'',
+'*Thandraiya maasa sella:*',
+'• MDR ('+d.curMdr+'%) | Vaadagai: '+d.curRent,
+'• *Mottham: '+d.curTotal+'*',
+'',
+'*PhonePe udan:*',
+'• MDR ('+d.ourMdr+'%) | Vaadagai: '+d.ourRent,
+'• *Mottham: '+d.ourTotal+'*',
+'',
+'*Ungal nischaya semippu:*',
+'✦ Maasam: *'+d.nm+'*',
+'✦ Varusham: *'+d.ny+'*',
+'✦ 5 varusham: *'+d.nf+'*',
+'',
+'*Semippu payan:*',
+compStr(d.comps,'tamil','r','premium'),
+'',
+'*Valadal ungal semipu:*',
+growthBlock(d.growth,'tamil','r'),
+'',
+'Thodarbu kollunga:',
+'*'+d.agent+'* | '+d.phone
+].join('\n');};
+
+// ── TAMIL NATIVE ──
+MSG['tamil_n_basic']=function(d){return[
+'வணக்கம் 👋',
+'',
+'உங்களுக்காக ஒரு *சேமிப்பு அறிக்கை* தயார் செய்துள்ளோம் 🙏',
+'',
+'📱 மாதாந்திர கார்டு பரிவர்த்தனை: *'+d.vol+'*',
+'',
+'🚫 இப்போது நீங்கள் கொடுக்கிறீர்கள்: *'+d.curTotal+'/மாதம்*',
+'✅ எங்கள் மெஷினில்: *'+d.ourTotal+'/மாதம்*',
+'',
+'💰 *மாத சேமிப்பு: '+d.nm+'*',
+'🎉 *வருட சேமிப்பு: '+d.ny+'*',
+'📈 *5 ஆண்டுகளில்: '+d.nf+'*',
+'',
+'சேமிப்பின் பயன்:',
+compStr(d.comps,'tamil','native','basic'),
+'',
+'📅 வளர்ச்சியுடன் சேமிப்பு:',
+growthBlock(d.growth,'tamil','native'),
+'',
+'📞 இப்போதே தொடர்பு கொள்ளுங்கள்:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['tamil_n_standard']=function(d){return[
+'வணக்கம் 👋',
+'',
+'உங்கள் தொழிலுக்கான *சேமிப்பு ஆய்வு* தயார்।',
+'',
+'📊 மாதாந்திர கார்டு: *'+d.vol+'*',
+'',
+'*தற்போதைய மாத செலவு:*',
+'• MDR ('+d.curMdr+'%) | வாடகை: '+d.curRent,
+'• *மொத்தம்: '+d.curTotal+'/மாதம்*',
+'',
+'*எங்களுடன் செலவு:*',
+'• MDR ('+d.ourMdr+'%) | வாடகை: '+d.ourRent,
+'• *மொத்தம்: '+d.ourTotal+'/மாதம்*',
+'',
+'✦ *மாதாந்திர சேமிப்பு: '+d.nm+'*',
+'✦ *வருடாந்திர சேமிப்பு: '+d.ny+'*',
+'✦ *5 ஆண்டுகளில்: '+d.nf+'*',
+'',
+'*சேமிப்பின் மூலம்:*',
+compStr(d.comps,'tamil','native','standard'),
+'',
+'*வளர்ச்சியுடன் சேமிப்பு:*',
+growthBlock(d.growth,'tamil','native'),
+'',
+'மேலும் தகவலுக்கு:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['tamil_n_premium']=function(d){return[
+'மதிப்பிற்குரிய வியாபாரி,',
+'',
+'உங்கள் தொழிலுக்கான *சிறப்பு சேமிப்பு விவரம்* கீழே:',
+'',
+'📊 மாதாந்திர கார்டு: *'+d.vol+'*',
+'',
+'*தற்போதைய மாத செலவு:*',
+'• MDR ('+d.curMdr+'%) | வாடகை: '+d.curRent,
+'• *மொத்தம்: '+d.curTotal+'*',
+'',
+'*PhonePe உடன்:*',
+'• MDR ('+d.ourMdr+'%) | வாடகை: '+d.ourRent,
+'• *மொத்தம்: '+d.ourTotal+'*',
+'',
+'*உங்கள் நிச்சய சேமிப்பு:*',
+'✦ மாதம்: *'+d.nm+'*',
+'✦ வருடம்: *'+d.ny+'*',
+'✦ 5 ஆண்டுகள்: *'+d.nf+'*',
+'',
+'*சேமிப்பின் பயன்:*',
+compStr(d.comps,'tamil','native','premium'),
+'',
+'*வளர்ச்சியுடன் சேமிப்பு:*',
+growthBlock(d.growth,'tamil','native'),
+'',
+'தொடர்பு கொள்ளுங்கள்:',
+'*'+d.agent+'* | '+d.phone
+].join('\n');};
+
+// ── TELUGU ROMAN ──
+MSG['telugu_r_basic']=function(d){return[
+'Namaskaram 👋',
+'',
+'Meeru kosam oka *bachat report* tayyaru chesamu 🙏',
+'',
+'📱 Maasam card vyvaharam: *'+d.vol+'*',
+'',
+'🚫 Meeru ippudu ichche: *'+d.curTotal+'/maasam*',
+'✅ Maa machine tho: *'+d.ourTotal+'/maasam*',
+'',
+'💰 *Prathi maasam aadayam: '+d.nm+'*',
+'🎉 *Prathi samvatsaram: '+d.ny+'*',
+'📈 *5 samvatsaraalu: '+d.nf+'*',
+'',
+'Ee aadayam artham:',
+compStr(d.comps,'telugu','r','basic'),
+'',
+'📅 Vyaaparam perigite bachat:',
+growthBlock(d.growth,'telugu','r'),
+'',
+'📞 Ipudu samprathinchaandi:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['telugu_r_standard']=function(d){return[
+'Namaskaram 👋',
+'',
+'Mee vyaapaaraniki oka *savings analysis* tayyaaru.',
+'',
+'📊 Maasam card: *'+d.vol+'*',
+'',
+'*Ippudu maasam kharch:*',
+'• MDR ('+d.curMdr+'%) | Rent: '+d.curRent,
+'• *Mottham: '+d.curTotal+'/maasam*',
+'',
+'*Maa tho maasam kharch:*',
+'• MDR ('+d.ourMdr+'%) | Rent: '+d.ourRent,
+'• *Mottham: '+d.ourTotal+'/maasam*',
+'',
+'✦ *Maasam: '+d.nm+'*',
+'✦ *Samvatsaram: '+d.ny+'*',
+'✦ *5 samvatsaralu: '+d.nf+'*',
+'',
+'*Ee aadayam tho meeeru cheyyachu:*',
+compStr(d.comps,'telugu','r','standard'),
+'',
+'*Vyaaparam perigite bachat:*',
+growthBlock(d.growth,'telugu','r'),
+'',
+'Meeru samprathinchaandi:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['telugu_r_premium']=function(d){return[
+'Gowravaneeya Merchant,',
+'',
+'Mee vyaapaaraniki *visheshamaina aadaayam vivaram:*',
+'',
+'📊 Maasam card: *'+d.vol+'*',
+'',
+'*Ippudu maasam vyayam:*',
+'• MDR ('+d.curMdr+'%) | Rent: '+d.curRent,
+'• *Mottham: '+d.curTotal+'*',
+'',
+'*PhonePe tho:*',
+'• MDR ('+d.ourMdr+'%) | Rent: '+d.ourRent,
+'• *Mottham: '+d.ourTotal+'*',
+'',
+'*Mee nischita aadayam:*',
+'✦ Maasam: *'+d.nm+'*',
+'✦ Samvatsaram: *'+d.ny+'*',
+'✦ 5 samvatsaralu: *'+d.nf+'*',
+'',
+'*Aadayam upyogam:*',
+compStr(d.comps,'telugu','r','premium'),
+'',
+'*Vyaaparam perigite:*',
+growthBlock(d.growth,'telugu','r'),
+'',
+'Samprathinchaandi:',
+'*'+d.agent+'* | '+d.phone
+].join('\n');};
+
+// ── TELUGU NATIVE ──
+MSG['telugu_n_basic']=function(d){return[
+'నమస్కారం 👋',
+'',
+'మీ కోసం ఒక *బచత్ రిపోర్ట్* తయారు చేశాము 🙏',
+'',
+'📱 నెల కార్డు వ్యవహారం: *'+d.vol+'*',
+'',
+'🚫 మీరు ఇప్పుడు ఇస్తున్నారు: *'+d.curTotal+'/నెల*',
+'✅ మా మెషీన్‌తో: *'+d.ourTotal+'/నెల*',
+'',
+'💰 *ప్రతి నెల ఆదాయం: '+d.nm+'*',
+'🎉 *ప్రతి సంవత్సరం: '+d.ny+'*',
+'📈 *5 సంవత్సరాలు: '+d.nf+'*',
+'',
+'ఈ ఆదాయం అంటే:',
+compStr(d.comps,'telugu','native','basic'),
+'',
+'📅 వ్యాపారం పెరిగితే:',
+growthBlock(d.growth,'telugu','native'),
+'',
+'📞 ఇప్పుడే సంప్రదించండి:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['telugu_n_standard']=function(d){return[
+'నమస్కారం 👋',
+'',
+'మీ వ్యాపారానికి ఒక *బచత్ విశ్లేషణ* తయారు।',
+'',
+'📊 నెల కార్డు: *'+d.vol+'*',
+'',
+'*ప్రస్తుత నెల ఖర్చు:*',
+'• MDR ('+d.curMdr+'%) | అద్దె: '+d.curRent,
+'• *మొత్తం: '+d.curTotal+'/నెల*',
+'',
+'*మాతో నెల ఖర్చు:*',
+'• MDR ('+d.ourMdr+'%) | అద్దె: '+d.ourRent,
+'• *మొత్తం: '+d.ourTotal+'/నెల*',
+'',
+'✦ *నెల: '+d.nm+'*',
+'✦ *సంవత్సరం: '+d.ny+'*',
+'✦ *5 సంవత్సరాలు: '+d.nf+'*',
+'',
+'*ఈ ఆదాయంతో చేయవచ్చు:*',
+compStr(d.comps,'telugu','native','standard'),
+'',
+'*వ్యాపారం పెరిగితే బచత్:*',
+growthBlock(d.growth,'telugu','native'),
+'',
+'సంప్రదించండి:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['telugu_n_premium']=function(d){return[
+'గౌరవనీయ వ్యాపారి,',
+'',
+'మీ వ్యాపారానికి *విశేషమైన బచత్ వివరాలు:*',
+'',
+'📊 నెల కార్డు: *'+d.vol+'*',
+'',
+'*ప్రస్తుత నెల వ్యయం:*',
+'• MDR ('+d.curMdr+'%) | అద్దె: '+d.curRent,
+'• *మొత్తం: '+d.curTotal+'*',
+'',
+'*PhonePe తో:*',
+'• MDR ('+d.ourMdr+'%) | అద్దె: '+d.ourRent,
+'• *మొత్తం: '+d.ourTotal+'*',
+'',
+'*మీ నిశ్చిత ఆదాయం:*',
+'✦ నెల: *'+d.nm+'*',
+'✦ సంవత్సరం: *'+d.ny+'*',
+'✦ 5 సంవత్సరాలు: *'+d.nf+'*',
+'',
+'*ఆదాయం ఉపయోగం:*',
+compStr(d.comps,'telugu','native','premium'),
+'',
+'*వ్యాపారం పెరిగితే:*',
+growthBlock(d.growth,'telugu','native'),
+'',
+'సంప్రదించండి:',
+'*'+d.agent+'* | '+d.phone
+].join('\n');};
+
+// ── KANNADA ROMAN ──
+MSG['kannada_r_basic']=function(d){return[
+'Namaskara 👋',
+'',
+'Nimma kosagi ond *bachat report* ready maadiddeve 🙏',
+'',
+'📱 Maasik card vyavahaara: *'+d.vol+'*',
+'',
+'🚫 Neevu ippaga koduttiddiri: *'+d.curTotal+'/tingalu*',
+'✅ Namma machine inda: *'+d.ourTotal+'/tingalu*',
+'',
+'💰 *Prathi tingalu: '+d.nm+'*',
+'🎉 *Prathi varsha: '+d.ny+'*',
+'📈 *5 varshagalu: '+d.nf+'*',
+'',
+'Ee bachat arthadalli:',
+compStr(d.comps,'kannada','r','basic'),
+'',
+'📅 Vyavasaaya baridaaga bachat:',
+growthBlock(d.growth,'kannada','r'),
+'',
+'📞 Innu samparki:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['kannada_r_standard']=function(d){return[
+'Namaskara 👋',
+'',
+'Nimma vyavasaayakke ond *savings vivara* ready.',
+'',
+'📊 Maasik card: *'+d.vol+'*',
+'',
+'*Ippaga maasik kharch:*',
+'• MDR ('+d.curMdr+'%) | Bhaade: '+d.curRent,
+'• *Ekun: '+d.curTotal+'/tingalu*',
+'',
+'*Nammande maasik kharch:*',
+'• MDR ('+d.ourMdr+'%) | Bhaade: '+d.ourRent,
+'• *Ekun: '+d.ourTotal+'/tingalu*',
+'',
+'✦ *Maasik: '+d.nm+'*',
+'✦ *Varshik: '+d.ny+'*',
+'✦ *5 varsha: '+d.nf+'*',
+'',
+'*Ee bachatinda neevu maadabahudu:*',
+compStr(d.comps,'kannada','r','standard'),
+'',
+'*Vyavasaaya baridaaga bachat:*',
+growthBlock(d.growth,'kannada','r'),
+'',
+'Hechchu mahitisaagi:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['kannada_r_premium']=function(d){return[
+'Gauravada Merchant,',
+'',
+'Nimma vyavasaayakke *visheshamada bachat vivara:*',
+'',
+'📊 Maasik card: *'+d.vol+'*',
+'',
+'*Ippaga maasik vyay:*',
+'• MDR ('+d.curMdr+'%) | Bhaade: '+d.curRent,
+'• *Ekun: '+d.curTotal+'*',
+'',
+'*PhonePe nodige:*',
+'• MDR ('+d.ourMdr+'%) | Bhaade: '+d.ourRent,
+'• *Ekun: '+d.ourTotal+'*',
+'',
+'*Nimma nischita bachat:*',
+'✦ Maasik: *'+d.nm+'*',
+'✦ Varshik: *'+d.ny+'*',
+'✦ 5 varsha: *'+d.nf+'*',
+'',
+'*Bachat upayoga:*',
+compStr(d.comps,'kannada','r','premium'),
+'',
+'*Vikas jote bachat:*',
+growthBlock(d.growth,'kannada','r'),
+'',
+'Samparki:',
+'*'+d.agent+'* | '+d.phone
+].join('\n');};
+
+// ── KANNADA NATIVE ──
+MSG['kannada_n_basic']=function(d){return[
+'ನಮಸ್ಕಾರ 👋',
+'',
+'ನಿಮ್ಮ ಕೋಸಾಗಿ ಒಂದು *ಬಚತ್ ರಿಪೋರ್ಟ್* ರೆಡಿ ಮಾಡಿದ್ದೇವೆ 🙏',
+'',
+'📱 ಮಾಸಿಕ ಕಾರ್ಡ್ ವ್ಯವಹಾರ: *'+d.vol+'*',
+'',
+'🚫 ನೀವು ಈಗ ಕೊಡುತ್ತಿದ್ದೀರಿ: *'+d.curTotal+'/ತಿಂಗಳು*',
+'✅ ನಮ್ಮ ಮೆಷಿನ್ ಇಂದ: *'+d.ourTotal+'/ತಿಂಗಳು*',
+'',
+'💰 *ಪ್ರತಿ ತಿಂಗಳು ಬಚತ್: '+d.nm+'*',
+'🎉 *ಪ್ರತಿ ವರ್ಷ ಬಚತ್: '+d.ny+'*',
+'📈 *5 ವರ್ಷಗಳಲ್ಲಿ: '+d.nf+'*',
+'',
+'ಈ ಬಚತ್ ಅಂದರೆ:',
+compStr(d.comps,'kannada','native','basic'),
+'',
+'📅 ವ್ಯವಸಾಯ ಬೆಳೆದಾಗ:',
+growthBlock(d.growth,'kannada','native'),
+'',
+'📞 ಇಂದೇ ಸಂಪರ್ಕಿಸಿ:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['kannada_n_standard']=function(d){return[
+'ನಮಸ್ಕಾರ 👋',
+'',
+'ನಿಮ್ಮ ವ್ಯವಸಾಯಕ್ಕೆ ಒಂದು *ಬಚತ್ ವಿಶ್ಲೇಷಣ* ತಯಾರು।',
+'',
+'📊 ಮಾಸಿಕ ಕಾರ್ಡ್: *'+d.vol+'*',
+'',
+'*ಈಗ ಮಾಸಿಕ ಖರ್ಚು:*',
+'• MDR ('+d.curMdr+'%) | ಭಾಡೆ: '+d.curRent,
+'• *ಒಟ್ಟು: '+d.curTotal+'/ತಿಂಗಳು*',
+'',
+'*ನಮ್ಮಂದೆ ಮಾಸಿಕ ಖರ್ಚು:*',
+'• MDR ('+d.ourMdr+'%) | ಭಾಡೆ: '+d.ourRent,
+'• *ಒಟ್ಟು: '+d.ourTotal+'/ತಿಂಗಳು*',
+'',
+'✦ *ಮಾಸಿಕ: '+d.nm+'*',
+'✦ *ವಾರ್ಷಿಕ: '+d.ny+'*',
+'✦ *5 ವರ್ಷ: '+d.nf+'*',
+'',
+'*ಈ ಬಚತ್‌ನಿಂದ ನೀವು ಮಾಡಬಹುದು:*',
+compStr(d.comps,'kannada','native','standard'),
+'',
+'*ವ್ಯವಸಾಯ ಬೆಳೆದಾಗ ಬಚತ್:*',
+growthBlock(d.growth,'kannada','native'),
+'',
+'ಹೆಚ್ಚಿನ ಮಾಹಿತಿಗಾಗಿ:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['kannada_n_premium']=function(d){return[
+'ಗೌರವಾನ್ವಿತ ವ್ಯಾಪಾರಿ,',
+'',
+'ನಿಮ್ಮ ವ್ಯವಸಾಯಕ್ಕೆ *ವಿಶೇಷ ಬಚತ್ ವಿವರ:*',
+'',
+'📊 ಮಾಸಿಕ ಕಾರ್ಡ್: *'+d.vol+'*',
+'',
+'*ಈಗ ಮಾಸಿಕ ವ್ಯಯ:*',
+'• MDR ('+d.curMdr+'%) | ಭಾಡೆ: '+d.curRent,
+'• *ಒಟ್ಟು: '+d.curTotal+'*',
+'',
+'*PhonePe ನೊಂದಿಗೆ:*',
+'• MDR ('+d.ourMdr+'%) | ಭಾಡೆ: '+d.ourRent,
+'• *ಒಟ್ಟು: '+d.ourTotal+'*',
+'',
+'*ನಿಮ್ಮ ನಿಶ್ಚಿತ ಬಚತ್:*',
+'✦ ಮಾಸಿಕ: *'+d.nm+'*',
+'✦ ವಾರ್ಷಿಕ: *'+d.ny+'*',
+'✦ 5 ವರ್ಷ: *'+d.nf+'*',
+'',
+'*ಬಚತ್ ಉಪಯೋಗ:*',
+compStr(d.comps,'kannada','native','premium'),
+'',
+'*ವಿಕಾಸ ಜೊತೆ ಬಚತ್:*',
+growthBlock(d.growth,'kannada','native'),
+'',
+'ಸಂಪರ್ಕಿಸಿ:',
+'*'+d.agent+'* | '+d.phone
+].join('\n');};
+
+// ── BENGALI ROMAN ──
+MSG['bengali_r_basic']=function(d){return[
+'Namaskar 👋',
+'',
+'Apnar jonno ekta *bachat report* toiri korechi 🙏',
+'',
+'📱 Maasik card laanden: *'+d.vol+'*',
+'',
+'🚫 Ekhon dichen: *'+d.curTotal+'/maas*',
+'✅ Amader machine-e: *'+d.ourTotal+'/maas*',
+'',
+'💰 *Proti maas bachat: '+d.nm+'*',
+'🎉 *Bochor bachat: '+d.ny+'*',
+'📈 *5 bochor: '+d.nf+'*',
+'',
+'Ei bachat mane:',
+compStr(d.comps,'bengali','r','basic'),
+'',
+'📅 Byabasar unnoti hole:',
+growthBlock(d.growth,'bengali','r'),
+'',
+'📞 Aj jonogayog korun:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['bengali_r_standard']=function(d){return[
+'Namaskar 👋',
+'',
+'Apnar byabashar jonno ekta *savings bishleshan* toiri.',
+'',
+'📊 Maasik card: *'+d.vol+'*',
+'',
+'*Ekhon maasik kharch:*',
+'• MDR ('+d.curMdr+'%) | Bhara: '+d.curRent,
+'• *Mottho: '+d.curTotal+'/maas*',
+'',
+'*Amader sathe maasik kharch:*',
+'• MDR ('+d.ourMdr+'%) | Bhara: '+d.ourRent,
+'• *Mottho: '+d.ourTotal+'/maas*',
+'',
+'✦ *Maasik bachat: '+d.nm+'*',
+'✦ *Baarshik bachat: '+d.ny+'*',
+'✦ *5 bochor: '+d.nf+'*',
+'',
+'*Ei bachat diye apni korte parben:*',
+compStr(d.comps,'bengali','r','standard'),
+'',
+'*Byabasar unnoti hole bachat:*',
+growthBlock(d.growth,'bengali','r'),
+'',
+'Jogayog korun:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['bengali_r_premium']=function(d){return[
+'Shroddheyo Merchant,',
+'',
+'Apnar byabashar jonno *bishesh bachat vivoran:*',
+'',
+'📊 Maasik card: *'+d.vol+'*',
+'',
+'*Bartaman maasik vyay:*',
+'• MDR ('+d.curMdr+'%) | Bhara: '+d.curRent,
+'• *Mottho: '+d.curTotal+'*',
+'',
+'*PhonePe sathe:*',
+'• MDR ('+d.ourMdr+'%) | Bhara: '+d.ourRent,
+'• *Mottho: '+d.ourTotal+'*',
+'',
+'*Apnar nischit bachat:*',
+'✦ Maasik: *'+d.nm+'*',
+'✦ Baarshik: *'+d.ny+'*',
+'✦ 5 bochor: *'+d.nf+'*',
+'',
+'*Bachat er upayog:*',
+compStr(d.comps,'bengali','r','premium'),
+'',
+'*Unnoti sathe bachat:*',
+growthBlock(d.growth,'bengali','r'),
+'',
+'Jogayog korun:',
+'*'+d.agent+'* | '+d.phone
+].join('\n');};
+
+// ── BENGALI NATIVE ──
+MSG['bengali_n_basic']=function(d){return[
+'নমস্কার 👋',
+'',
+'আপনার জন্য একটি *বাচত রিপোর্ট* তৈরি করেছি 🙏',
+'',
+'📱 মাসিক কার্ড লেনদেন: *'+d.vol+'*',
+'',
+'🚫 এখন দিচ্ছেন: *'+d.curTotal+'/মাস*',
+'✅ আমাদের মেশিনে: *'+d.ourTotal+'/মাস*',
+'',
+'💰 *প্রতি মাস বাচত: '+d.nm+'*',
+'🎉 *বছর বাচত: '+d.ny+'*',
+'📈 *5 বছরে: '+d.nf+'*',
+'',
+'এই বাচত মানে:',
+compStr(d.comps,'bengali','native','basic'),
+'',
+'📅 ব্যবসার উন্নতি হলে:',
+growthBlock(d.growth,'bengali','native'),
+'',
+'📞 আজ যোগাযোগ করুন:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['bengali_n_standard']=function(d){return[
+'নমস্কার 👋',
+'',
+'আপনার ব্যবসার জন্য একটি *বাচত বিশ্লেষণ* তৈরি।',
+'',
+'📊 মাসিক কার্ড: *'+d.vol+'*',
+'',
+'*এখন মাসিক খরচ:*',
+'• MDR ('+d.curMdr+'%) | ভাড়া: '+d.curRent,
+'• *মোট: '+d.curTotal+'/মাস*',
+'',
+'*আমাদের সাথে:*',
+'• MDR ('+d.ourMdr+'%) | ভাড়া: '+d.ourRent,
+'• *মোট: '+d.ourTotal+'/মাস*',
+'',
+'✦ *মাসিক বাচত: '+d.nm+'*',
+'✦ *বার্ষিক বাচত: '+d.ny+'*',
+'✦ *5 বছরে: '+d.nf+'*',
+'',
+'*এই বাচত দিয়ে আপনি পারবেন:*',
+compStr(d.comps,'bengali','native','standard'),
+'',
+'*ব্যবসা বাড়লে বাচত:*',
+growthBlock(d.growth,'bengali','native'),
+'',
+'যোগাযোগ করুন:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['bengali_n_premium']=function(d){return[
+'শ্রদ্ধেয় ব্যাপারী,',
+'',
+'আপনার ব্যবসার জন্য *বিশেষ বাচত বিবরণ:*',
+'',
+'📊 মাসিক কার্ড: *'+d.vol+'*',
+'',
+'*বর্তমান মাসিক ব্যয়:*',
+'• MDR ('+d.curMdr+'%) | ভাড়া: '+d.curRent,
+'• *মোট: '+d.curTotal+'*',
+'',
+'*PhonePe সাথে:*',
+'• MDR ('+d.ourMdr+'%) | ভাড়া: '+d.ourRent,
+'• *মোট: '+d.ourTotal+'*',
+'',
+'*আপনার নিশ্চিত বাচত:*',
+'✦ মাসিক: *'+d.nm+'*',
+'✦ বার্ষিক: *'+d.ny+'*',
+'✦ 5 বছর: *'+d.nf+'*',
+'',
+'*বাচতের উপযোগ:*',
+compStr(d.comps,'bengali','native','premium'),
+'',
+'*উন্নতি সাথে বাচত:*',
+growthBlock(d.growth,'bengali','native'),
+'',
+'যোগাযোগ:',
+'*'+d.agent+'* | '+d.phone
+].join('\n');};
+
+// ── PUNJABI ROMAN ──
+MSG['punjabi_r_basic']=function(d){return[
+'Sat Sri Akal 👋',
+'',
+'Tuhaade lyi ik *bachat report* taiyar ki hai 🙏',
+'',
+'📱 Maheene card vyavhaar: *'+d.vol+'*',
+'',
+'🚫 Hune tusi dende ho: *'+d.curTotal+'/maheena*',
+'✅ Saadi machine te: *'+d.ourTotal+'/maheena*',
+'',
+'💰 *Har maheene: '+d.nm+'*',
+'🎉 *Har saal: '+d.ny+'*',
+'📈 *5 saal: '+d.nf+'*',
+'',
+'Ii bachat da matlab:',
+compStr(d.comps,'punjabi','r','basic'),
+'',
+'📅 Karobaar vadhda jaave:',
+growthBlock(d.growth,'punjabi','r'),
+'',
+'📞 Aj hi sampark karo:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['punjabi_r_standard']=function(d){return[
+'Sat Sri Akal 👋',
+'',
+'Tuhaade karobaar lyi ik *savings report* taiyar.',
+'',
+'📊 Maheene card: *'+d.vol+'*',
+'',
+'*Hune maheene kharch:*',
+'• MDR ('+d.curMdr+'%) | Kiraya: '+d.curRent,
+'• *Kul: '+d.curTotal+'/maheena*',
+'',
+'*Saade naal maheene kharch:*',
+'• MDR ('+d.ourMdr+'%) | Kiraya: '+d.ourRent,
+'• *Kul: '+d.ourTotal+'/maheena*',
+'',
+'✦ *Maheena: '+d.nm+'*',
+'✦ *Saal: '+d.ny+'*',
+'✦ *5 saal: '+d.nf+'*',
+'',
+'*Ii bachat naal tusi kar sakde ho:*',
+compStr(d.comps,'punjabi','r','standard'),
+'',
+'*Karobaar vadhda jaave te bachat:*',
+growthBlock(d.growth,'punjabi','r'),
+'',
+'Hori jaankari lyi:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['punjabi_r_premium']=function(d){return[
+'Maanyavar Merchant,',
+'',
+'Tuhaade karobaar lyi *khaas bachat vivran:*',
+'',
+'📊 Maheene card: *'+d.vol+'*',
+'',
+'*Hune maheene kharch:*',
+'• MDR ('+d.curMdr+'%) | Kiraya: '+d.curRent,
+'• *Kul: '+d.curTotal+'*',
+'',
+'*PhonePe naal:*',
+'• MDR ('+d.ourMdr+'%) | Kiraya: '+d.ourRent,
+'• *Kul: '+d.ourTotal+'*',
+'',
+'*Tuhaadi nischit bachat:*',
+'✦ Maheena: *'+d.nm+'*',
+'✦ Saal: *'+d.ny+'*',
+'✦ 5 saal: *'+d.nf+'*',
+'',
+'*Bachat da upyog:*',
+compStr(d.comps,'punjabi','r','premium'),
+'',
+'*Karobaar de vadhne naal:*',
+growthBlock(d.growth,'punjabi','r'),
+'',
+'Sampark karo:',
+'*'+d.agent+'* | '+d.phone
+].join('\n');};
+
+// ── PUNJABI NATIVE ──
+MSG['punjabi_n_basic']=function(d){return[
+'ਸਤ ਸ੍ਰੀ ਅਕਾਲ 👋',
+'',
+'ਤੁਹਾਡੇ ਲਈ ਇੱਕ *ਬਚਤ ਰਿਪੋਰਟ* ਤਿਆਰ ਕੀਤੀ ਹੈ 🙏',
+'',
+'📱 ਮਹੀਨੇ ਕਾਰਡ ਵਿਵਹਾਰ: *'+d.vol+'*',
+'',
+'🚫 ਹੁਣੇ ਤੁਸੀਂ ਦਿੰਦੇ ਹੋ: *'+d.curTotal+'/ਮਹੀਨਾ*',
+'✅ ਸਾਡੀ ਮਸ਼ੀਨ ਤੇ: *'+d.ourTotal+'/ਮਹੀਨਾ*',
+'',
+'💰 *ਹਰ ਮਹੀਨੇ: '+d.nm+'*',
+'🎉 *ਹਰ ਸਾਲ: '+d.ny+'*',
+'📈 *5 ਸਾਲ: '+d.nf+'*',
+'',
+'ਇਹ ਬਚਤ ਦਾ ਮਤਲਬ:',
+compStr(d.comps,'punjabi','native','basic'),
+'',
+'📅 ਕਾਰੋਬਾਰ ਵਧਣ ਨਾਲ:',
+growthBlock(d.growth,'punjabi','native'),
+'',
+'📞 ਅੱਜ ਸੰਪਰਕ ਕਰੋ:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['punjabi_n_standard']=function(d){return[
+'ਸਤ ਸ੍ਰੀ ਅਕਾਲ 👋',
+'',
+'ਤੁਹਾਡੇ ਕਾਰੋਬਾਰ ਲਈ ਇੱਕ *ਬਚਤ ਵਿਸ਼ਲੇਸ਼ਣ* ਤਿਆਰ।',
+'',
+'📊 ਮਹੀਨੇ ਕਾਰਡ: *'+d.vol+'*',
+'',
+'*ਹੁਣੇ ਮਹੀਨੇ ਖਰਚ:*',
+'• MDR ('+d.curMdr+'%) | ਕਿਰਾਇਆ: '+d.curRent,
+'• *ਕੁੱਲ: '+d.curTotal+'/ਮਹੀਨਾ*',
+'',
+'*ਸਾਡੇ ਨਾਲ ਮਹੀਨੇ ਖਰਚ:*',
+'• MDR ('+d.ourMdr+'%) | ਕਿਰਾਇਆ: '+d.ourRent,
+'• *ਕੁੱਲ: '+d.ourTotal+'/ਮਹੀਨਾ*',
+'',
+'✦ *ਮਹੀਨਾ: '+d.nm+'*',
+'✦ *ਸਾਲ: '+d.ny+'*',
+'✦ *5 ਸਾਲ: '+d.nf+'*',
+'',
+'*ਇਸ ਬਚਤ ਨਾਲ ਤੁਸੀਂ ਕਰ ਸਕਦੇ ਹੋ:*',
+compStr(d.comps,'punjabi','native','standard'),
+'',
+'*ਕਾਰੋਬਾਰ ਵਧਣ ਨਾਲ ਬਚਤ:*',
+growthBlock(d.growth,'punjabi','native'),
+'',
+'ਵਧੇਰੇ ਜਾਣਕਾਰੀ ਲਈ:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['punjabi_n_premium']=function(d){return[
+'ਮਾਣਯੋਗ ਵਪਾਰੀ,',
+'',
+'ਤੁਹਾਡੇ ਕਾਰੋਬਾਰ ਲਈ *ਖਾਸ ਬਚਤ ਵਿਵਰਣ:*',
+'',
+'📊 ਮਹੀਨੇ ਕਾਰਡ: *'+d.vol+'*',
+'',
+'*ਹੁਣ ਮਹੀਨੇ ਵਿੱਤ:*',
+'• MDR ('+d.curMdr+'%) | ਕਿਰਾਇਆ: '+d.curRent,
+'• *ਕੁੱਲ: '+d.curTotal+'*',
+'',
+'*PhonePe ਨਾਲ:*',
+'• MDR ('+d.ourMdr+'%) | ਕਿਰਾਇਆ: '+d.ourRent,
+'• *ਕੁੱਲ: '+d.ourTotal+'*',
+'',
+'*ਤੁਹਾਡੀ ਨਿਸ਼ਚਿਤ ਬਚਤ:*',
+'✦ ਮਹੀਨਾ: *'+d.nm+'*',
+'✦ ਸਾਲ: *'+d.ny+'*',
+'✦ 5 ਸਾਲ: *'+d.nf+'*',
+'',
+'*ਬਚਤ ਦਾ ਉਪਯੋਗ:*',
+compStr(d.comps,'punjabi','native','premium'),
+'',
+'*ਕਾਰੋਬਾਰ ਵਧਣ ਨਾਲ:*',
+growthBlock(d.growth,'punjabi','native'),
+'',
+'ਸੰਪਰਕ ਕਰੋ:',
+'*'+d.agent+'* | '+d.phone
+].join('\n');};
+
+// ── URDU ROMAN (no native script for Urdu) ──
+MSG['urdu_r_basic']=function(d){return[
+'Assalam Alaikum 👋',
+'',
+'Aapke liye ek *bachat report* taiyar ki hai 🙏',
+'',
+'📱 Maheene card lenden: *'+d.vol+'*',
+'',
+'🚫 Abhi aap dete hain: *'+d.curTotal+'/maheena*',
+'✅ Hamaari machine par: *'+d.ourTotal+'/maheena*',
+'',
+'💰 *Har maheene: '+d.nm+'*',
+'🎉 *Har saal: '+d.ny+'*',
+'📈 *5 saal: '+d.nf+'*',
+'',
+'Yeh bachat ka matlab:',
+compStr(d.comps,'urdu','r','basic'),
+'',
+'📅 Karobaar badhne par:',
+growthBlock(d.growth,'urdu','r'),
+'',
+'📞 Aaj sampark karein:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['urdu_r_standard']=function(d){return[
+'Assalam Alaikum 👋',
+'',
+'Aapke karobaar ke liye ek *savings report* taiyar hai.',
+'',
+'📊 Maheene card: *'+d.vol+'*',
+'',
+'*Abhi maheene kharch:*',
+'• MDR ('+d.curMdr+'%) | Kiraya: '+d.curRent,
+'• *Kul: '+d.curTotal+'/maheena*',
+'',
+'*Hamare saath:*',
+'• MDR ('+d.ourMdr+'%) | Kiraya: '+d.ourRent,
+'• *Kul: '+d.ourTotal+'/maheena*',
+'',
+'✦ *Maheena: '+d.nm+'*',
+'✦ *Saal: '+d.ny+'*',
+'✦ *5 saal: '+d.nf+'*',
+'',
+'*Yeh bachat se aap kar sakte hain:*',
+compStr(d.comps,'urdu','r','standard'),
+'',
+'*Karobaar badhne par:*',
+growthBlock(d.growth,'urdu','r'),
+'',
+'Rabita karein:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['urdu_r_premium']=function(d){return[
+'Muhtaram Merchant,',
+'',
+'Aapke karobaar ke liye *khaas bachat tafseel:*',
+'',
+'📊 Maheene card: *'+d.vol+'*',
+'',
+'*Abhi maheene vyay:*',
+'• MDR ('+d.curMdr+'%) | Kiraya: '+d.curRent,
+'• *Kul: '+d.curTotal+'*',
+'',
+'*PhonePe ke saath:*',
+'• MDR ('+d.ourMdr+'%) | Kiraya: '+d.ourRent,
+'• *Kul: '+d.ourTotal+'*',
+'',
+'*Aapki nischit bachat:*',
+'✦ Maheena: *'+d.nm+'*',
+'✦ Saal: *'+d.ny+'*',
+'✦ 5 saal: *'+d.nf+'*',
+'',
+'*Bachat ka istimaal:*',
+compStr(d.comps,'urdu','r','premium'),
+'',
+'*Karobaar ke saath bachat:*',
+growthBlock(d.growth,'urdu','r'),
+'',
+'Rabita karein:',
+'*'+d.agent+'* | '+d.phone
+].join('\n');};
+
+MSG['urdu_n_basic']=MSG['urdu_r_basic'];
+MSG['urdu_n_standard']=MSG['urdu_r_standard'];
+MSG['urdu_n_premium']=MSG['urdu_r_premium'];
+
+// ── ODIA ROMAN ──
+MSG['odia_r_basic']=function(d){return[
+'Namaskar 👋',
+'',
+'Aapanka paain ekta *savings report* taiyar karichi 🙏',
+'',
+'📱 Maasik card: *'+d.vol+'*',
+'',
+'🚫 Ebe aapa deuachanti: *'+d.curTotal+'/maas*',
+'✅ Amara machine re: *'+d.ourTotal+'/maas*',
+'',
+'💰 *Prati maas: '+d.nm+'*',
+'🎉 *Prati barsa: '+d.ny+'*',
+'📈 *5 barsa: '+d.nf+'*',
+'',
+'Aa savings arthat:',
+compStr(d.comps,'odia','r','basic'),
+'',
+'📅 Byabasaya badhile:',
+growthBlock(d.growth,'odia','r'),
+'',
+'📞 Aaj samparka karantu:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['odia_r_standard']=function(d){return[
+'Namaskar 👋',
+'',
+'Apananka byabasaaya paain *savings vishleshan* taiyar.',
+'',
+'📊 Maasik card: *'+d.vol+'*',
+'',
+'*Ebe maasik kharch:*',
+'• MDR ('+d.curMdr+'%) | Bhaada: '+d.curRent,
+'• *Ekun: '+d.curTotal+'/maas*',
+'',
+'*Amara sathe:*',
+'• MDR ('+d.ourMdr+'%) | Bhaada: '+d.ourRent,
+'• *Ekun: '+d.ourTotal+'/maas*',
+'',
+'✦ *Maasik: '+d.nm+'*',
+'✦ *Baarshik: '+d.ny+'*',
+'✦ *5 barsa: '+d.nf+'*',
+'',
+'*Aa savings re apane kariba para:*',
+compStr(d.comps,'odia','r','standard'),
+'',
+'*Byabasaya badhile savings:*',
+growthBlock(d.growth,'odia','r'),
+'',
+'Adhika tathya paaen:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['odia_r_premium']=function(d){return[
+'Adaraniya Merchant,',
+'',
+'Apananka byabasaaya paain *vishesh savings vivaran:*',
+'',
+'📊 Maasik card: *'+d.vol+'*',
+'',
+'*Ebe maasik vyay:*',
+'• MDR ('+d.curMdr+'%) | Bhaada: '+d.curRent,
+'• *Ekun: '+d.curTotal+'*',
+'',
+'*PhonePe sathe:*',
+'• MDR ('+d.ourMdr+'%) | Bhaada: '+d.ourRent,
+'• *Ekun: '+d.ourTotal+'*',
+'',
+'*Apananka nischit savings:*',
+'✦ Maasik: *'+d.nm+'*',
+'✦ Baarshik: *'+d.ny+'*',
+'✦ 5 barsa: *'+d.nf+'*',
+'',
+'*Savings upayoga:*',
+compStr(d.comps,'odia','r','premium'),
+'',
+'*Byabasaya badhile:*',
+growthBlock(d.growth,'odia','r'),
+'',
+'Samparka karantu:',
+'*'+d.agent+'* | '+d.phone
+].join('\n');};
+
+MSG['odia_n_basic']=MSG['odia_r_basic'];
+MSG['odia_n_standard']=MSG['odia_r_standard'];
+MSG['odia_n_premium']=MSG['odia_r_premium'];
+
+// ── ASSAMESE ROMAN ──
+MSG['assamese_r_basic']=function(d){return[
+'Namaskar 👋',
+'',
+'Apunar babe ekta *savings report* toiyar korishu 🙏',
+'',
+'📱 Maasik card: *'+d.vol+'*',
+'',
+'🚫 Akhon aapuni disat ase: *'+d.curTotal+'/maah*',
+'✅ Amar machine-t: *'+d.ourTotal+'/maah*',
+'',
+'💰 *Prati maah: '+d.nm+'*',
+'🎉 *Prati bochor: '+d.ny+'*',
+'📈 *5 bochor: '+d.nf+'*',
+'',
+'Ei savings er artha:',
+compStr(d.comps,'assamese','r','basic'),
+'',
+'📅 Byabasar unnoti hoile:',
+growthBlock(d.growth,'assamese','r'),
+'',
+'📞 Aaj jogayog korok:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['assamese_r_standard']=function(d){return[
+'Namaskar 👋',
+'',
+'Apunar byabasayar babe *savings bishleshan* toiyar.',
+'',
+'📊 Maasik card: *'+d.vol+'*',
+'',
+'*Akhon maasik kharch:*',
+'• MDR ('+d.curMdr+'%) | Bhara: '+d.curRent,
+'• *Mottho: '+d.curTotal+'/maah*',
+'',
+'*Amar logot:*',
+'• MDR ('+d.ourMdr+'%) | Bhara: '+d.ourRent,
+'• *Mottho: '+d.ourTotal+'/maah*',
+'',
+'✦ *Maasik: '+d.nm+'*',
+'✦ *Baarsik: '+d.ny+'*',
+'✦ *5 bochor: '+d.nf+'*',
+'',
+'*Ei savings diye apuni koribo paribo:*',
+compStr(d.comps,'assamese','r','standard'),
+'',
+'*Byabasar unnoti hoile:*',
+growthBlock(d.growth,'assamese','r'),
+'',
+'Adhik tothyo:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['assamese_r_premium']=function(d){return[
+'Shroddheyo Merchant,',
+'',
+'Apunar byabasayar babe *bishesh savings vivoran:*',
+'',
+'📊 Maasik card: *'+d.vol+'*',
+'',
+'*Akhon maasik byay:*',
+'• MDR ('+d.curMdr+'%) | Bhara: '+d.curRent,
+'• *Mottho: '+d.curTotal+'*',
+'',
+'*PhonePe logot:*',
+'• MDR ('+d.ourMdr+'%) | Bhara: '+d.ourRent,
+'• *Mottho: '+d.ourTotal+'*',
+'',
+'*Apunar nischit savings:*',
+'✦ Maasik: *'+d.nm+'*',
+'✦ Baarsik: *'+d.ny+'*',
+'✦ 5 bochor: *'+d.nf+'*',
+'',
+'*Savings er upayog:*',
+compStr(d.comps,'assamese','r','premium'),
+'',
+'*Unnoti logot:*',
+growthBlock(d.growth,'assamese','r'),
+'',
+'Jogayog korok:',
+'*'+d.agent+'* | '+d.phone
+].join('\n');};
+
+MSG['assamese_n_basic']=MSG['assamese_r_basic'];
+MSG['assamese_n_standard']=MSG['assamese_r_standard'];
+MSG['assamese_n_premium']=MSG['assamese_r_premium'];
+
+// ── MALAYALAM ROMAN ──
+MSG['malayalam_r_basic']=function(d){return[
+'Namaskaaram 👋',
+'',
+'Ningalkkuveendi oru *savings report* ready aakki 🙏',
+'',
+'📱 Maasik card: *'+d.vol+'*',
+'',
+'🚫 Ippol ningal kodukkunnathu: *'+d.curTotal+'/maasam*',
+'✅ Nammude machine-il: *'+d.ourTotal+'/maasam*',
+'',
+'💰 *Oru maasam: '+d.nm+'*',
+'🎉 *Oru varsham: '+d.ny+'*',
+'📈 *5 varsham: '+d.nf+'*',
+'',
+'Ee savings kondu:',
+compStr(d.comps,'malayalam','r','basic'),
+'',
+'📅 Vyaapaaram varadhal:',
+growthBlock(d.growth,'malayalam','r'),
+'',
+'📞 Ippothe thodarbu kollunga:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['malayalam_r_standard']=function(d){return[
+'Namaskaaram 👋',
+'',
+'Ningalude vyaaparaathinu vendi oru *savings report* ready.',
+'',
+'📊 Maasik card: *'+d.vol+'*',
+'',
+'*Ippol maasik chhelavu:*',
+'• MDR ('+d.curMdr+'%) | Vaadaka: '+d.curRent,
+'• *Mottham: '+d.curTotal+'/maasam*',
+'',
+'*Nammalodu chhelavu:*',
+'• MDR ('+d.ourMdr+'%) | Vaadaka: '+d.ourRent,
+'• *Mottham: '+d.ourTotal+'/maasam*',
+'',
+'✦ *Maasam: '+d.nm+'*',
+'✦ *Varsham: '+d.ny+'*',
+'✦ *5 varsham: '+d.nf+'*',
+'',
+'*Ee savings kondu cheyyaam:*',
+compStr(d.comps,'malayalam','r','standard'),
+'',
+'*Vyaapaaram varadhale savings:*',
+growthBlock(d.growth,'malayalam','r'),
+'',
+'Kooduthal viverangal:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['malayalam_r_premium']=function(d){return[
+'Bhaavyamaaya Merchant,',
+'',
+'Ningalude vyaaparaathinu *visheshamaya savings vivaram:*',
+'',
+'📊 Maasik card: *'+d.vol+'*',
+'',
+'*Ippol maasik vyayam:*',
+'• MDR ('+d.curMdr+'%) | Vaadaka: '+d.curRent,
+'• *Mottham: '+d.curTotal+'*',
+'',
+'*PhonePe udan:*',
+'• MDR ('+d.ourMdr+'%) | Vaadaka: '+d.ourRent,
+'• *Mottham: '+d.ourTotal+'*',
+'',
+'*Ningalude nischita savings:*',
+'✦ Maasam: *'+d.nm+'*',
+'✦ Varsham: *'+d.ny+'*',
+'✦ 5 varsham: *'+d.nf+'*',
+'',
+'*Savings upayogam:*',
+compStr(d.comps,'malayalam','r','premium'),
+'',
+'*Vyaapaaram varadhale:*',
+growthBlock(d.growth,'malayalam','r'),
+'',
+'Thodarbu kollunga:',
+'*'+d.agent+'* | '+d.phone
+].join('\n');};
+
+// ── MALAYALAM NATIVE ──
+MSG['malayalam_n_basic']=function(d){return[
+'നമസ്കാരം 👋',
+'',
+'നിങ്ങൾക്കുവേണ്ടി ഒരു *സേവിംഗ്സ് റിപ്പോർട്ട്* റെഡി ആക്കി 🙏',
+'',
+'📱 മാസിക കാർഡ്: *'+d.vol+'*',
+'',
+'🚫 ഇപ്പോൾ നൽകുന്നത്: *'+d.curTotal+'/മാസം*',
+'✅ ഞങ്ങളുടെ മെഷിനിൽ: *'+d.ourTotal+'/മാസം*',
+'',
+'💰 *ഒരു മാസം: '+d.nm+'*',
+'🎉 *ഒരു വർഷം: '+d.ny+'*',
+'📈 *5 വർഷം: '+d.nf+'*',
+'',
+'ഈ സേവിംഗ്സ് കൊണ്ട്:',
+compStr(d.comps,'malayalam','native','basic'),
+'',
+'📅 വ്യാപാരം വളർന്നാൽ:',
+growthBlock(d.growth,'malayalam','native'),
+'',
+'📞 ഇപ്പോൾ തന്നെ ബന്ധപ്പെടൂ:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['malayalam_n_standard']=function(d){return[
+'നമസ്കാരം 👋',
+'',
+'നിങ്ങളുടെ വ്യാപാരത്തിന് ഒരു *സേവിംഗ്സ് വിശകലനം* തയ്യാർ।',
+'',
+'📊 മാസിക കാർഡ്: *'+d.vol+'*',
+'',
+'*ഇപ്പോഴത്തെ മാസ ചെലവ്:*',
+'• MDR ('+d.curMdr+'%) | വാടക: '+d.curRent,
+'• *ആകെ: '+d.curTotal+'/മാസം*',
+'',
+'*ഞങ്ങളോടൊപ്പം:*',
+'• MDR ('+d.ourMdr+'%) | വാടക: '+d.ourRent,
+'• *ആകെ: '+d.ourTotal+'/മാസം*',
+'',
+'✦ *മാസം: '+d.nm+'*',
+'✦ *വർഷം: '+d.ny+'*',
+'✦ *5 വർഷം: '+d.nf+'*',
+'',
+'*ഈ സേവിംഗ്സ് ഉപയോഗിക്കാം:*',
+compStr(d.comps,'malayalam','native','standard'),
+'',
+'*വ്യാപാരം വളർന്നാൽ:*',
+growthBlock(d.growth,'malayalam','native'),
+'',
+'കൂടുതൽ വിവരങ്ങൾ:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['malayalam_n_premium']=function(d){return[
+'ബഹുമാനപ്പെട്ട വ്യാപാരി,',
+'',
+'നിങ്ങളുടെ വ്യാപാരത്തിന് *വിശേഷ സേവിംഗ്സ് വിവരം:*',
+'',
+'📊 മാസിക കാർഡ്: *'+d.vol+'*',
+'',
+'*ഇപ്പോഴത്തെ മാസ വ്യയം:*',
+'• MDR ('+d.curMdr+'%) | വാടക: '+d.curRent,
+'• *ആകെ: '+d.curTotal+'*',
+'',
+'*PhonePe ഉടൻ:*',
+'• MDR ('+d.ourMdr+'%) | വാടക: '+d.ourRent,
+'• *ആകെ: '+d.ourTotal+'*',
+'',
+'*നിങ്ങളുടെ നിശ്ചിത സേവിംഗ്സ്:*',
+'✦ മാസം: *'+d.nm+'*',
+'✦ വർഷം: *'+d.ny+'*',
+'✦ 5 വർഷം: *'+d.nf+'*',
+'',
+'*സേവിംഗ്സ് ഉപയോഗം:*',
+compStr(d.comps,'malayalam','native','premium'),
+'',
+'*വ്യാപാരം വളർന്നാൽ:*',
+growthBlock(d.growth,'malayalam','native'),
+'',
+'ബന്ധപ്പെടൂ:',
+'*'+d.agent+'* | '+d.phone
+].join('\n');};
+
+// ── ENGLISH ──
+MSG['english_r_basic']=function(d){return[
+'Hello 👋',
+'',
+'We have prepared a *savings report* for you 🙏',
+'',
+'📱 Monthly card transactions: *'+d.vol+'*',
+'',
+'🚫 You currently pay: *'+d.curTotal+'/month*',
+'✅ With our machine: *'+d.ourTotal+'/month*',
+'',
+'💰 *Monthly saving: '+d.nm+'*',
+'🎉 *Yearly saving: '+d.ny+'*',
+'📈 *5-year saving: '+d.nf+'*',
+'',
+'This saving means:',
+compStr(d.comps,'english','r','basic'),
+'',
+'📅 As your business grows:',
+growthBlock(d.growth,'english','r'),
+'',
+'📞 Contact us today:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['english_r_standard']=function(d){return[
+'Dear Merchant,',
+'',
+'Please find your *savings analysis* below.',
+'',
+'📊 Monthly card volume: *'+d.vol+'*',
+'',
+'*Current monthly cost:*',
+'• MDR ('+d.curMdr+'%) + Rental '+d.curRent,
+'• *Total: '+d.curTotal+'/month*',
+'',
+'*With PhonePe:*',
+'• MDR ('+d.ourMdr+'%) + Rental '+d.ourRent,
+'• *Total: '+d.ourTotal+'/month*',
+'',
+'✦ *Monthly saving: '+d.nm+'*',
+'✦ *Yearly saving: '+d.ny+'*',
+'✦ *5-year saving: '+d.nf+'*',
+'',
+'*What this saving means:*',
+compStr(d.comps,'english','r','standard'),
+'',
+'*Projected savings as business grows:*',
+growthBlock(d.growth,'english','r'),
+'',
+'For more information:',
+'*'+d.agent+'* — '+d.phone
+].join('\n');};
+
+MSG['english_r_premium']=function(d){return[
+'Dear Merchant,',
+'',
+'Please find below a detailed *savings report* prepared exclusively for your business.',
+'',
+'📊 Monthly card volume: *'+d.vol+'*',
+'',
+'*Current monthly expenditure:*',
+'• MDR ('+d.curMdr+'%) | Monthly rental: '+d.curRent,
+'• *Total monthly cost: '+d.curTotal+'*',
+'',
+'*With PhonePe EDC:*',
+'• MDR ('+d.ourMdr+'%) | Monthly rental: '+d.ourRent,
+'• *Total monthly cost: '+d.ourTotal+'*',
+'',
+'*Your net savings:*',
+'✦ Monthly: *'+d.nm+'*',
+'✦ Annually: *'+d.ny+'*',
+'✦ Over 5 years: *'+d.nf+'*',
+'',
+'*Strategic use of savings:*',
+compStr(d.comps,'english','r','premium'),
+'',
+'*Savings projection with business growth:*',
+growthBlock(d.growth,'english','r'),
+'',
+'For further assistance, please contact:',
+'*'+d.agent+'* | '+d.phone
+].join('\n');};
+
+MSG['english_n_basic']=MSG['english_r_basic'];
+MSG['english_n_standard']=MSG['english_r_standard'];
+MSG['english_n_premium']=MSG['english_r_premium'];
+
+// ═══════════════════════════════════════════════════════════════
+// MESSAGE GENERATION
+// ═══════════════════════════════════════════════════════════════
+function buildMessageFromTemplate(c,lang,script,level){
+  var d=buildTemplateData(c);
+  var scriptKey=(script==='native')?'n':'r';
+  var key=lang+'_'+scriptKey+'_'+level;
+  var fn=MSG[key];
+  if(!fn){
+    // Fallback: try roman, then hindi roman basic
+    fn=MSG[lang+'_r_'+level]||MSG['hindi_r_basic'];
+  }
+  return fn(d);
+}
+
+async function generateMessage(c,level,lang,script){
+  var genEl=document.getElementById('msg-generating'),wrapEl=document.getElementById('msg-preview-wrap');
+  genEl.style.display='block';wrapEl.style.display='none';
+  var msg=buildMessageFromTemplate(c,lang,script,level);
+  lastMessage=msg;
+  genEl.style.display='none';
+  document.getElementById('msg-preview').textContent=msg;
+  wrapEl.style.display='block';
+  document.getElementById('copy-btn').className='copy-btn';
+  document.getElementById('copy-text').textContent='Copy Message';
+  document.getElementById('copy-icon').textContent='📋';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// IMAGE GENERATION
+// ═══════════════════════════════════════════════════════════════
 async function generateImage(c,level,lang){
   var genEl=document.getElementById('img-generating'),imgEl=document.getElementById('generated-img'),hintEl=document.getElementById('img-hint'),stepsEl=document.getElementById('gen-steps');
   genEl.style.display='block';imgEl.style.display='none';hintEl.style.display='none';
-  stepsEl.textContent='Getting AI savings examples...';
-  // Build 3 columns
+  stepsEl.textContent='Building your savings report...';
   var cols=[1,2,3].map(function(m){
     var v=c.vol*m;
     var nm=(c.mdrDiffPct*v)+(c.curRental-c.ourRental);
     return{vol:v,nm:nm,ny:nm*12,n6:nm*6,mult:m+'x'};
   });
-  // Get unique examples per column from API
-  var allItems=await getImageExamples(cols,level,lang);
+  var allItems=getImageExamplesHardcoded(cols,level,lang);
   stepsEl.textContent='Drawing the card...';
   drawCard(c,level,lang,cols,allItems);
   genEl.style.display='none';imgEl.style.display='block';hintEl.style.display='block';
 }
 
-async function getImageExamples(cols,level,lang){
-  var isHindi=(lang==='hindi');
-  var langInstr=isHindi?'Write all text in Hindi using Devanagari script only.':'Write all text in English only.';
-
-  // Level-specific example pools to ensure correct emojis and no repetition
-  var levelInstr;
-  if(level==='basic'){
-    levelInstr='Examples must be everyday household items. Use accurate emojis: 🍽️ for restaurant meal, 💡 for electricity, 🛒 for groceries, 🛵 for bike EMI, 📚 for school supplies, 💊 for medicine, 🎂 for celebration. Never use ✈️ for train. Never use ✦.';
-  } else if(level==='standard'){
-    levelInstr='Examples must be aspirational items. Use accurate emojis: 📱 for smartphone, 🚂 for train trip (NOT ✈️), 🏥 for health insurance, 🏠 for home upgrade, 💻 for laptop, 🛋️ for furniture. Never use ✈️ for train trips. Use ✦ if no emoji fits.';
-  } else {
-    levelInstr='Examples must be wealth-building items. Use accurate emojis: 🪙 for gold coin, 📈 for SIP/investment, 🎓 for college fund, 🏨 for resort trip, 🏠 for property, ✈️ ONLY for actual international flight. Use ✦ for investment/financial items.';
-  }
-
-  var amtStr=cols.map(function(col,i){return'Column '+(i+1)+': monthly saving='+fmt(col.nm)+', yearly='+fmt(col.ny);}).join(' | ');
-
-  var prompt='Generate 6 savings usage examples for a PhonePe savings report image.\n'+langInstr+'\n'+levelInstr+'\n\nSavings: '+amtStr+'\n\nRules:\n1. Give exactly 2 examples per column (6 total, in column order)\n2. Each example must match its column saving amount realistically\n3. ALL 6 examples must be completely different topics\n4. Each: one accurate emoji + short text (max 6 words in '+(isHindi?'Hindi Devanagari':'English')+')\n\nReturn ONLY a JSON array:\n[{"emoji":"🍽️","text":"example"},{"emoji":"💡","text":"example"},{"emoji":"📱","text":"example"},{"emoji":"🚂","text":"example"},{"emoji":"🪙","text":"example"},{"emoji":"📈","text":"example"}]';
-
-  try{
-    var r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,messages:[{role:'user',content:prompt}]})});
-    var d=await r.json();
-    if(d.error)throw new Error(d.error.message);
-    var txt=d.content.filter(function(b){return b.type==='text'}).map(function(b){return b.text}).join('');
-    var arr=JSON.parse(txt.replace(/```json|```/g,'').trim());
-    if(arr.length>=6)return arr;
-    throw new Error('not enough items');
-  }catch(e){
-    // Hardcoded fallback — all different, correct emojis, correct language
-    if(level==='basic'){
-      return isHindi?[
-        {emoji:'🍽️',text:'परिवार के साथ बाहर खाना'},{emoji:'💡',text:'बिजली का बिल भरें'},
-        {emoji:'🛒',text:'महीने की किराना खरीदारी'},{emoji:'🛵',text:'बाइक की EMI भरें'},
-        {emoji:'📚',text:'बच्चों की किताबें खरीदें'},{emoji:'💊',text:'दवाई और स्वास्थ्य खर्च'}
-      ]:[
-        {emoji:'🍽️',text:'Family dinner every month'},{emoji:'💡',text:'Full electricity bill paid'},
-        {emoji:'🛒',text:'Monthly grocery run covered'},{emoji:'🛵',text:'One bike EMI paid off'},
-        {emoji:'📚',text:"Kids' school supplies bought"},{emoji:'💊',text:'Monthly medicine costs covered'}
-      ];
-    } else if(level==='standard'){
-      return isHindi?[
-        {emoji:'📱',text:'नया स्मार्टफोन हर साल'},{emoji:'🚂',text:'परिवार की ट्रेन यात्रा'},
-        {emoji:'🏥',text:'स्वास्थ्य बीमा प्रीमियम'},{emoji:'🏠',text:'घर की मरम्मत करवाएं'},
-        {emoji:'💻',text:'लैपटॉप या टैबलेट खरीदें'},{emoji:'🛋️',text:'नया फर्नीचर घर के लिए'}
-      ]:[
-        {emoji:'📱',text:'New smartphone every year'},{emoji:'🚂',text:'Family train trip covered'},
-        {emoji:'🏥',text:'Health insurance premium paid'},{emoji:'🏠',text:'Home repair and upgrades'},
-        {emoji:'💻',text:'New laptop for the family'},{emoji:'🛋️',text:'New furniture for your shop'}
-      ];
-    } else {
-      return isHindi?[
-        {emoji:'🪙',text:'1 ग्राम सोने का सिक्का'},{emoji:'📈',text:'SIP में निवेश करें'},
-        {emoji:'🎓',text:'बच्चे की पढ़ाई का फंड'},{emoji:'🏨',text:'5 दिन का रिसॉर्ट ट्रिप'},
-        {emoji:'🏠',text:'घर के डाउन पेमेंट का हिस्सा'},{emoji:'✦',text:'म्यूचुअल फंड में लगाएं'}
-      ]:[
-        {emoji:'🪙',text:'Buy a pure gold coin'},{emoji:'📈',text:'Start a SIP investment'},
-        {emoji:'🎓',text:"Child's college education fund"},{emoji:'🏨',text:'5-day family resort stay'},
-        {emoji:'🏠',text:'Property down payment fund'},{emoji:'✦',text:'Mutual fund portfolio addition'}
-      ];
-    }
-  }
+function getImageExamplesHardcoded(cols,level,lang){
+  var results=[];
+  // Each column gets items at a different offset so examples are never repeated
+  // col0: offset 0 → items[0,1], col1: offset 2 → items[2,3], col2: offset 4 → items[0,2] (wrap)
+  cols.forEach(function(col,ci){
+    var offset=ci*2; // guaranteed different start per column
+    var items=getRealisticComparisons(col.nm,level,lang,2,offset);
+    var parsed=items.slice(0,2).map(function(line){
+      var firstSpace=line.indexOf(' ');
+      var e=firstSpace>-1?line.substring(0,firstSpace):'✦';
+      var t=firstSpace>-1?line.substring(firstSpace+1).trim():'';
+      return{emoji:e,text:t};
+    });
+    while(parsed.length<2) parsed.push({emoji:'💰',text:lang==='hindi'?'बचत का सही उपयोग':'Smart use of savings'});
+    results.push(parsed[0]);results.push(parsed[1]);
+  });
+  return results;
 }
 
 function drawCard(c,level,lang,cols,allItems){
@@ -496,21 +2472,16 @@ function drawCard(c,level,lang,cols,allItems){
   var isHindi=(lang==='hindi');
   var W=1080,pad=32,gap=18;
   var colW=Math.floor((W-pad*2-gap*2)/3);
-
-  // Themes
   var T={
     basic:{bg:'#1A0A35',glow:'rgba(124,58,237,0.22)',colBg:'#241550',colBorder:'rgba(167,139,250,0.5)',accent:'#22C55E',accentDim:'rgba(34,197,94,0.15)',accentBorder:'rgba(34,197,94,0.6)',innerBg:'#1A0A35',innerBorder:'rgba(124,58,237,0.25)',barBg:'rgba(255,255,255,0.08)',topColors:['#7C3AED','#9333EA','#7C3AED'],badgeBg:'rgba(34,197,94,0.8)',badgeText:'#000',subText:'rgba(255,255,255,0.55)',bestTextColor:'#000'},
     standard:{bg:'#0D0A00',glow:'rgba(245,158,11,0.15)',colBg:'#1C1500',colBorder:'rgba(245,158,11,0.45)',accent:'#FCD34D',accentDim:'rgba(245,158,11,0.15)',accentBorder:'rgba(245,158,11,0.6)',innerBg:'#0D0A00',innerBorder:'rgba(245,158,11,0.2)',barBg:'rgba(255,255,255,0.07)',topColors:['#7C3AED','#F59E0B','#7C3AED'],badgeBg:'rgba(245,158,11,0.85)',badgeText:'#000',subText:'rgba(255,255,255,0.55)',bestTextColor:'#000'},
     premium:{bg:'#000000',glow:'rgba(124,58,237,0.15)',colBg:'#0C0C0C',colBorder:'rgba(245,158,11,0.35)',accent:'#F59E0B',accentDim:'rgba(245,158,11,0.1)',accentBorder:'rgba(245,158,11,0.5)',innerBg:'#050505',innerBorder:'rgba(245,158,11,0.12)',barBg:'rgba(255,255,255,0.05)',topColors:['#4C1D95','#7C3AED','#F59E0B','#7C3AED','#4C1D95'],badgeBg:'rgba(245,158,11,0.9)',badgeText:'#000',subText:'rgba(255,255,255,0.5)',bestTextColor:'#000'}
   }[level];
-
   var itemsPerCol=2;
   var itemH=itemsPerCol*96;
   var H=540+itemH;
   canvas.width=W;canvas.height=H;
   var ctx=canvas.getContext('2d');
-
-  // Background
   ctx.fillStyle=T.bg;ctx.fillRect(0,0,W,H);
   var g=ctx.createRadialGradient(W/2,0,0,W/2,0,W*0.75);
   g.addColorStop(0,T.glow);g.addColorStop(1,'transparent');
@@ -519,24 +2490,18 @@ function drawCard(c,level,lang,cols,allItems){
     var g2=ctx.createRadialGradient(W,H,0,W,H,W*0.5);
     g2.addColorStop(0,'rgba(245,158,11,0.1)');g2.addColorStop(1,'transparent');
     ctx.fillStyle=g2;ctx.fillRect(0,0,W,H);
-    // Border
     var bG=ctx.createLinearGradient(0,0,W,H);
     bG.addColorStop(0,'#7C3AED');bG.addColorStop(0.4,'#F59E0B');bG.addColorStop(0.6,'#C0C0C0');bG.addColorStop(1,'#7C3AED');
     ctx.strokeStyle=bG;ctx.lineWidth=2;ctx.strokeRect(8,8,W-16,H-16);
   }
-  // Top bar
   var tG=ctx.createLinearGradient(0,0,W,0);
   T.topColors.forEach(function(c2,i){tG.addColorStop(i/(T.topColors.length-1),c2);});
   ctx.fillStyle=tG;ctx.fillRect(0,0,W,8);
-
   var y=28;
-  // PhonePe logo
   ctx.fillStyle='#5B21B6';ctx.beginPath();ctx.arc(pad+20,y+20,20,0,Math.PI*2);ctx.fill();
   ctx.font='bold 20px Arial';ctx.fillStyle='#fff';ctx.textAlign='center';ctx.fillText('pe',pad+20,y+27);
   ctx.font='bold 26px Sora, Arial';ctx.fillStyle='#fff';ctx.textAlign='left';ctx.fillText('PhonePe',pad+50,y+27);
   y+=58;
-
-  // MDR comparison bar
   ctx.fillStyle=T.barBg;roundRect(ctx,pad,y,W-pad*2,44,22);ctx.fill();
   ctx.strokeStyle='rgba(255,255,255,0.08)';ctx.lineWidth=1;roundRect(ctx,pad,y,W-pad*2,44,22);ctx.stroke();
   var bx=pad+24,by=y+22;
@@ -562,8 +2527,6 @@ function drawCard(c,level,lang,cols,allItems){
   ctx.font='bold 15px DM Mono, monospace';ctx.fillStyle=T.accent;
   ctx.fillText(' '+(c.curMdr-c.ourMdr).toFixed(2)+'%',e2+14+w3,by+5);
   y+=58;
-
-  // Headline
   ctx.textAlign='center';
   var hl=isHindi?'ज़्यादा स्वाइप, ज़्यादा बचत!':'More Swipes, More Savings!';
   var sl=isHindi?'अभी स्विच करें और बचाना शुरू करें':'Switch now and start saving today';
@@ -578,41 +2541,28 @@ function drawCard(c,level,lang,cols,allItems){
   ctx.font='500 17px Sora, Arial';ctx.fillStyle=T.subText;
   ctx.fillText(sl,W/2,y);
   y+=40;
-
-  // 3 columns
   var colY=y+10;
   var colH=H-colY-70;
   cols.forEach(function(col,ci){
     var cx=pad+ci*(colW+gap);
     var items=[allItems[ci*2],allItems[ci*2+1]];
-
-    // Col bg
     ctx.fillStyle=T.colBg;roundRect(ctx,cx,colY,colW,colH,16);ctx.fill();
     ctx.strokeStyle=T.colBorder;ctx.lineWidth=1.5;roundRect(ctx,cx,colY,colW,colH,16);ctx.stroke();
-
-    // Monthly swipes header
     var swLabel=isHindi?'मासिक स्वाइप':'MONTHLY SWIPES';
     ctx.font='bold 10px Sora, Arial';ctx.fillStyle='rgba(255,255,255,0.45)';ctx.textAlign='center';
     ctx.fillText(swLabel.toUpperCase(),cx+colW/2,colY+22);
     ctx.font='bold 24px DM Mono, monospace';ctx.fillStyle='#fff';
     ctx.fillText(fmtL(col.vol),cx+colW/2,colY+50);
-
-    // Divider
     ctx.strokeStyle=T.colBorder;ctx.lineWidth=1;ctx.globalAlpha=0.35;
     ctx.beginPath();ctx.moveTo(cx+12,colY+62);ctx.lineTo(cx+colW-12,colY+62);ctx.stroke();
     ctx.globalAlpha=1;
-
     var iy=colY+72;
-
-    // 6 months savings
     var m6Lbl=isHindi?'6 महीने की बचत':'6 MONTHS SAVINGS';
     ctx.font='bold 10px Sora, Arial';ctx.fillStyle='rgba(255,255,255,0.4)';ctx.textAlign='center';
     ctx.fillText(m6Lbl.toUpperCase(),cx+colW/2,iy+14);
     ctx.font='bold 27px DM Mono, monospace';ctx.fillStyle=T.accent;
     ctx.fillText(fmt(col.n6),cx+colW/2,iy+44);
     iy+=58;
-
-    // Saving items
     items.forEach(function(item){
       ctx.fillStyle=T.innerBg;roundRect(ctx,cx+10,iy,colW-20,84,10);ctx.fill();
       ctx.strokeStyle=T.innerBorder;ctx.lineWidth=1;roundRect(ctx,cx+10,iy,colW-20,84,10);ctx.stroke();
@@ -621,11 +2571,8 @@ function drawCard(c,level,lang,cols,allItems){
       wrapText(ctx,item.text||'',cx+colW/2,iy+57,colW-32,17);
       iy+=96;
     });
-
-    // 1 year savings highlighted
     ctx.fillStyle=T.accentDim;roundRect(ctx,cx+10,iy,colW-20,96,12);ctx.fill();
     ctx.strokeStyle=T.accentBorder;ctx.lineWidth=1.5;roundRect(ctx,cx+10,iy,colW-20,96,12);ctx.stroke();
-    // BEST badge
     var bestTxt=isHindi?'बेस्ट':'BEST';
     var btw=measureW(ctx,bestTxt,'bold 11px Sora, Arial')+20;
     ctx.fillStyle=T.badgeBg;roundRect(ctx,cx+colW/2-btw/2,iy-13,btw,26,13);ctx.fill();
@@ -637,8 +2584,6 @@ function drawCard(c,level,lang,cols,allItems){
     ctx.font='bold 28px DM Mono, monospace';ctx.fillStyle=T.accent;
     ctx.fillText(fmt(col.ny),cx+colW/2,iy+66);
   });
-
-  // Footer
   var fy=H-62;
   ctx.strokeStyle='rgba(255,255,255,0.08)';ctx.lineWidth=1;
   ctx.beginPath();ctx.moveTo(pad,fy);ctx.lineTo(W-pad,fy);ctx.stroke();
@@ -649,64 +2594,6 @@ function drawCard(c,level,lang,cols,allItems){
   ctx.fillText(c.agentName+' — '+c.agentPhone,pad,fy+42);
   ctx.fillStyle=tG;ctx.fillRect(0,H-8,W,8);
   document.getElementById('generated-img').src=canvas.toDataURL('image/png');
-}
-
-// ── MESSAGE GENERATION ──
-async function generateMessage(c,level,lang,script){
-  var genEl=document.getElementById('msg-generating'),wrapEl=document.getElementById('msg-preview-wrap');
-  genEl.style.display='block';wrapEl.style.display='none';
-  var msg=await buildMessage(c,level,lang,script);
-  lastMessage=msg;
-  document.getElementById('msg-preview').textContent=msg;
-  genEl.style.display='none';wrapEl.style.display='block';
-  document.getElementById('copy-btn').className='copy-btn';
-  document.getElementById('copy-text').textContent='Copy Message';
-  document.getElementById('copy-icon').textContent='📋';
-}
-
-async function buildMessage(c,level,lang,script){
-  var langNames={hindi:'Hindi',marathi:'Marathi',gujarati:'Gujarati',tamil:'Tamil',telugu:'Telugu',kannada:'Kannada',bengali:'Bengali',punjabi:'Punjabi',urdu:'Urdu',odia:'Odia',assamese:'Assamese',malayalam:'Malayalam',english:'English'};
-  var langName=langNames[lang]||lang;
-  var isNative=script==='native';
-  var scriptNote=isNative?'Write in the native script of '+langName+' (e.g. Devanagari for Hindi, Tamil script for Tamil, etc).':'Write in Roman letters using '+langName+' words (Hinglish/transliteration style).';
-  var curMdrCost=c.curMdr/100*c.vol,ourMdrCost=c.ourMdr/100*c.vol,curTotal=curMdrCost+c.curRental,ourTotal=ourMdrCost+c.ourRental;
-  var count=level==='basic'?3:level==='standard'?4:5;
-
-  // Level-specific tone and style
-  var levelGuide;
-  if(level==='basic'){
-    levelGuide='TONE: Warm, friendly, very simple words. Write like talking to a neighbourhood shopkeeper. Use emojis heavily (💰🎉✅🛵🍽️💡). Comparisons should be everyday household things (family meal, electricity bill, school fees, grocery run, mobile recharge). Keep sentences short.';
-  } else if(level==='standard'){
-    levelGuide='TONE: Confident, aspirational, slightly formal. Write like a business advisor. Use ✦ symbols instead of basic emojis. Comparisons should be aspirational (new smartphone, family train trip 🚂 not ✈️, health insurance, home appliance, one month staff salary). Show the merchant they are growing.';
-  } else {
-    levelGuide='TONE: Professional, exclusive, premium. Write like a private banker. Use ✦ symbols only, no casual emojis. Comparisons should be wealth-building (gold coin 🪙, SIP mutual fund investment 📈, child college fund 🎓, property down payment 🏠, 4-5 day resort trip 🏨). Make the merchant feel elite.';
-  }
-
-  // Growth rows
-  var gRows=[];var seen={};
-  [1,1.5,2,3,4,5].forEach(function(m){
-    var v=Math.round(c.vol*m/10000)*10000||Math.round(c.vol*m);
-    if(v<c.vol||seen[v])return;seen[v]=true;
-    var nm=(c.mdrDiffPct*v)+(c.curRental-c.ourRental);
-    if(nm>0&&gRows.length<4)gRows.push({v:v,ny:nm*12});
-  });
-  var growthStr=gRows.map(function(g){return fmtL(g.v)+' \u2192 '+fmt(g.ny)+'/year'}).join('\n');
-
-  // CRITICAL: language instruction is the FIRST thing in the system prompt
-  var systemPrompt='YOU MUST WRITE ENTIRELY IN '+langName.toUpperCase()+'. EVERY SINGLE WORD must be in '+langName+'. '+scriptNote+' DO NOT use any other language. This is non-negotiable.';
-
-  var userPrompt=levelGuide+'\n\nSavings numbers:\n- Monthly: '+fmt(c.netMonth)+'\n- Yearly: '+fmt(c.netYear)+'\n- 5 years: '+fmt(c.netFiveYear)+'\n- Their current cost: '+fmt(curTotal)+'/month\n- Our cost: '+fmt(ourTotal)+'/month\n- MDR: '+c.curMdr+'% → '+c.ourMdr+'%\n- Rental: '+fmt(c.curRental)+' → '+fmt(c.ourRental)+'\n\nGrowth table to include:\n'+growthStr+'\n\nAgent name: '+c.agentName+'\nAgent phone: '+c.agentPhone+'\n\nWrite '+count+' unique comparisons matching the saving amount realistically. IMPORTANT: use 🚂 for train trips, never ✈️ unless it is actually a flight. All comparisons must be different.\n\nMessage structure: greeting → their current cost vs our cost → monthly/yearly/5yr savings in bold (*text*) → comparisons → growth table → agent contact.\nReturn ONLY the message. No explanation.';
-
-  try{
-    var r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,system:systemPrompt,messages:[{role:'user',content:userPrompt}]})});
-    var d=await r.json();
-    if(d.error){throw new Error(d.error.message);}
-    return d.content.filter(function(b){return b.type==='text'}).map(function(b){return b.text}).join('').trim();
-  }catch(e){
-    // Fallback hardcoded in selected language basics
-    var greet={hindi:'Namaste \uD83D\uDC4B',marathi:'Namaskar \uD83D\uDC4B',gujarati:'Namaskar \uD83D\uDC4B',tamil:'Vanakkam \uD83D\uDC4B',telugu:'Namaskaram \uD83D\uDC4B',kannada:'Namaskara \uD83D\uDC4B',bengali:'Namaskar \uD83D\uDC4B',punjabi:'Sat Sri Akal \uD83D\uDC4B',urdu:'Assalam Alaikum \uD83D\uDC4B',odia:'Namaskar \uD83D\uDC4B',assamese:'Namaskar \uD83D\uDC4B',malayalam:'Namaskaaram \uD83D\uDC4B',english:'Hello \uD83D\uDC4B'}[lang]||'Hello \uD83D\uDC4B';
-    return greet+'\n\nYour savings report is ready.\n\n\uD83D\uDCB0 Monthly: *'+fmt(c.netMonth)+'*\n\u2705 Yearly: *'+fmt(c.netYear)+'*\n\uD83D\uDCC8 5 Years: *'+fmt(c.netFiveYear)+'*\n\n\uD83D\uDCDE Contact: *'+c.agentName+'* — '+c.agentPhone;
-  }
 }
 
 function copyMessage(){
@@ -723,7 +2610,7 @@ function fallbackCopy(btn,txt,ico){
   document.body.removeChild(ta);
 }
 function showCopied(btn,txt,ico){
-  btn.className='copy-btn copied';ico.textContent='\u2714\uFE0F';txt.textContent='Copied! Paste on WhatsApp';
+  btn.className='copy-btn copied';ico.textContent='✔️';txt.textContent='Copied! Paste on WhatsApp';
   setTimeout(function(){btn.className='copy-btn';ico.textContent='📋';txt.textContent='Copy Message';},3000);
 }
 
