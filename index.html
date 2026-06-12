@@ -384,7 +384,9 @@ function calculate(showReport){
     document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
   }
   var now=new Date();
-  fetch(SHEET_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({date:now.toLocaleDateString('en-IN'),time:now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}),dayOfWeek:DAYS[now.getDay()],agentName:c.agentName,agentPhone:c.agentPhone,mid:window._currentMid||'',sid:window._currentSid||'',volume:c.vol,curMdr:c.curMdr,curRental:c.curRental,curTotalCost:Math.round(c.curTotalCost),ourMdr:c.ourMdr,ourRental:c.ourRental,ourTotalCost:Math.round(c.ourTotalCost),mdrSaving:Math.round(c.mdrSaving),rentalSaving:Math.round(c.rentalSaving),netMonth:Math.round(c.netMonth),netYear:Math.round(c.netYear),netFiveYear:Math.round(c.netFiveYear),result:c.result,breakevenVol:Math.round(c.breakevenVol)})}).catch(function(){});
+  // Generate a unique ID for this calculation — used to update the same row later with MID/SID
+  window._lastEntryId=now.getTime().toString();
+  fetch(SHEET_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'log',entryId:window._lastEntryId,date:now.toLocaleDateString('en-IN'),time:now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}),dayOfWeek:DAYS[now.getDay()],agentName:c.agentName,agentPhone:c.agentPhone,volume:c.vol,curMdr:c.curMdr,curRental:c.curRental,curTotalCost:Math.round(c.curTotalCost),ourMdr:c.ourMdr,ourRental:c.ourRental,ourTotalCost:Math.round(c.ourTotalCost),mdrSaving:Math.round(c.mdrSaving),rentalSaving:Math.round(c.rentalSaving),netMonth:Math.round(c.netMonth),netYear:Math.round(c.netYear),netFiveYear:Math.round(c.netFiveYear),result:c.result,breakevenVol:Math.round(c.breakevenVol)})}).catch(function(){});
   return true;
 }
 
@@ -437,9 +439,8 @@ function submitMidAndProceed(){
     }
   }
   sid=document.getElementById('sid-input').value.trim()||'';
-  // Store for use in calculate() logging
-  window._currentMid=mid;
-  window._currentSid=sid;
+  // Send update to sheet — finds the row by entryId and fills MID + SID columns
+  fetch(SHEET_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'update',entryId:window._lastEntryId||'',mid:mid,sid:sid})}).catch(function(){});
   // Now proceed to type-specific step
   var t=window._pendingType||'message';
   if(t==='image') showStep('step-image');
