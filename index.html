@@ -128,6 +128,17 @@ select:focus{outline:none;border-color:var(--pp)}
 .level-btn.premium .level-dot{background:#FCD34D}.level-btn.premium .level-btn-title{color:#FCD34D}.level-btn.premium .level-btn-sub{color:rgba(255,255,255,.5)}
 .next-btn{width:100%;padding:13px;font-size:14px;font-weight:700;font-family:'Sora',sans-serif;background:linear-gradient(135deg,var(--pp),#9333EA);color:#fff;border:none;border-radius:12px;cursor:pointer;margin-bottom:0}
 .back-btn{width:100%;padding:12px;font-size:13px;font-family:'Sora',sans-serif;color:var(--ink-2);background:transparent;border:1.5px solid var(--border);border-radius:12px;cursor:pointer;margin-top:10px}
+.mid-input{width:100%;padding:11px 14px;font-size:15px;font-family:'DM Mono',monospace;font-weight:500;border:1.5px solid var(--border);border-radius:12px;background:#FAFAFA;color:var(--ink);margin-bottom:14px;box-sizing:border-box;transition:border-color .2s}
+.mid-input:focus{outline:none;border-color:var(--pp);background:#fff}
+.mid-input.error{border-color:#EF4444;background:#FFF5F5}
+.mid-option-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.mid-option-btn{padding:10px 8px;font-size:11px;font-weight:700;font-family:'Sora',sans-serif;border:2px solid var(--border);border-radius:12px;background:#fff;cursor:pointer;text-align:center;transition:all .15s;line-height:1.3}
+.mid-option-btn.active{border-color:var(--pp);background:linear-gradient(135deg,#F5F3FF,#EDE9FE);color:#4C1D95}
+.mid-option-btn:active{transform:scale(.97)}
+.mid-error{display:none;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.4);border-radius:8px;padding:8px 12px;font-size:11px;color:#DC2626;margin-bottom:12px}
+.mid-submit-btn{width:100%;padding:14px;font-size:14px;font-weight:700;font-family:'Sora',sans-serif;background:linear-gradient(135deg,var(--pp),#9333EA);color:#fff;border:none;border-radius:12px;cursor:pointer;margin-bottom:0}
+.optional-tag{font-size:9px;font-weight:600;color:var(--ink-2);background:#F3F4F6;border-radius:4px;padding:2px 6px;margin-left:6px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle}
+.mid-saved-chip{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#F5F3FF,#EDE9FE);border:1px solid #A78BFA;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600;color:#4C1D95;margin-bottom:14px;font-family:'DM Mono',monospace}
 </style>
 </head>
 <body>
@@ -255,6 +266,23 @@ select:focus{outline:none;border-color:var(--pp)}
       </button>
       <button class="back-btn" onclick="goBack('step-image','step-type')">← Back</button>
     </div>
+    <div id="step-mid" style="display:none">
+      <p class="popup-title">Merchant Details</p>
+      <p class="popup-sub">Enter MID before generating the report.</p>
+      <div class="popup-field-label">MID — Merchant ID <span style="color:#DC2626">*</span></div>
+      <div class="mid-option-row">
+        <button class="mid-option-btn active" id="mid-btn-existing" onclick="setMidMode('existing')">🏪 Existing Store<br><span style="font-weight:400;color:var(--ink-2)">Enter MID</span></button>
+        <button class="mid-option-btn" id="mid-btn-new" onclick="setMidMode('new')">✨ New Store<br><span style="font-weight:400;color:var(--ink-2)">No MID yet</span></button>
+      </div>
+      <div id="mid-input-wrap">
+        <input class="mid-input" type="text" id="mid-input" placeholder="e.g. 1234567890" maxlength="30" oninput="clearMidError()">
+      </div>
+      <div class="popup-field-label">SID — Store ID <span class="optional-tag">Optional</span></div>
+      <input class="mid-input" type="text" id="sid-input" placeholder="e.g. S001 (leave blank if unknown)" maxlength="30">
+      <div class="mid-error" id="mid-error">Please enter the MID or select New Store.</div>
+      <button class="mid-submit-btn" onclick="submitMidAndProceed()">Continue →</button>
+      <button class="back-btn" onclick="goBack('step-mid','step-type')">← Back</button>
+    </div>
     <div id="step-message" style="display:none">
       <p class="popup-title">WhatsApp Message</p>
       <p class="popup-sub">Choose language, script and merchant level.</p>
@@ -356,7 +384,7 @@ function calculate(showReport){
     document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
   }
   var now=new Date();
-  fetch(SHEET_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({date:now.toLocaleDateString('en-IN'),time:now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}),dayOfWeek:DAYS[now.getDay()],agentName:c.agentName,agentPhone:c.agentPhone,volume:c.vol,curMdr:c.curMdr,curRental:c.curRental,curTotalCost:Math.round(c.curTotalCost),ourMdr:c.ourMdr,ourRental:c.ourRental,ourTotalCost:Math.round(c.ourTotalCost),mdrSaving:Math.round(c.mdrSaving),rentalSaving:Math.round(c.rentalSaving),netMonth:Math.round(c.netMonth),netYear:Math.round(c.netYear),netFiveYear:Math.round(c.netFiveYear),result:c.result,breakevenVol:Math.round(c.breakevenVol)})}).catch(function(){});
+  fetch(SHEET_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({date:now.toLocaleDateString('en-IN'),time:now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}),dayOfWeek:DAYS[now.getDay()],agentName:c.agentName,agentPhone:c.agentPhone,mid:window._currentMid||'',sid:window._currentSid||'',volume:c.vol,curMdr:c.curMdr,curRental:c.curRental,curTotalCost:Math.round(c.curTotalCost),ourMdr:c.ourMdr,ourRental:c.ourRental,ourTotalCost:Math.round(c.ourTotalCost),mdrSaving:Math.round(c.mdrSaving),rentalSaving:Math.round(c.rentalSaving),netMonth:Math.round(c.netMonth),netYear:Math.round(c.netYear),netFiveYear:Math.round(c.netFiveYear),result:c.result,breakevenVol:Math.round(c.breakevenVol)})}).catch(function(){});
   return true;
 }
 
@@ -371,9 +399,52 @@ function showTypePopup(){
   document.getElementById('overlay').classList.add('active');
 }
 function showStep(id){
-  ['step-type','step-image','step-message'].forEach(function(s){document.getElementById(s).style.display=s===id?'block':'none';});
+  ['step-type','step-mid','step-image','step-message'].forEach(function(s){document.getElementById(s).style.display=s===id?'block':'none';});
 }
-function selectType(t){if(t==='image')showStep('step-image');else showStep('step-message');}
+function selectType(t){
+  // Store intended type, go to MID step first
+  window._pendingType=t;
+  // Reset MID mode to existing by default
+  setMidMode('existing');
+  document.getElementById('mid-input').value='';
+  document.getElementById('sid-input').value='';
+  clearMidError();
+  showStep('step-mid');
+}
+var _midMode='existing';
+function setMidMode(mode){
+  _midMode=mode;
+  document.getElementById('mid-btn-existing').className='mid-option-btn'+(mode==='existing'?' active':'');
+  document.getElementById('mid-btn-new').className='mid-option-btn'+(mode==='new'?' active':'');
+  var wrap=document.getElementById('mid-input-wrap');
+  wrap.style.display=mode==='new'?'none':'block';
+  clearMidError();
+}
+function clearMidError(){
+  document.getElementById('mid-error').style.display='none';
+  document.getElementById('mid-input').classList.remove('error');
+}
+function submitMidAndProceed(){
+  var mid='',sid='';
+  if(_midMode==='new'){
+    mid='NEW_STORE';
+  } else {
+    mid=document.getElementById('mid-input').value.trim();
+    if(!mid){
+      document.getElementById('mid-error').style.display='block';
+      document.getElementById('mid-input').classList.add('error');
+      return;
+    }
+  }
+  sid=document.getElementById('sid-input').value.trim()||'';
+  // Store for use in calculate() logging
+  window._currentMid=mid;
+  window._currentSid=sid;
+  // Now proceed to type-specific step
+  var t=window._pendingType||'message';
+  if(t==='image') showStep('step-image');
+  else showStep('step-message');
+}
 function goBack(from,to){showStep(to);}
 function closeOutside(e){if(e.target===document.getElementById('overlay'))closePopup()}
 function closePopup(){document.getElementById('overlay').classList.remove('active')}
